@@ -83,10 +83,7 @@ func createCluster() {
 
 	var jsonStr = []byte(`{
   "name": "my cool cluster",
-  "channelId": "6bdf0d1c-3d5a-4df6-8d03-762682964d85",
-  "generationId": "56e2028d-5948-4105-a8d8-4163c24dfa43", 
-  "regionId": "deadbeef-eaea-4bd3-972a-70203f150d88", 
-  "planTypeId": "6865c73e-8e67-41bd-9d97-dc28018804af"
+  
 }`)
 	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
