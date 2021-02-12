@@ -2,6 +2,7 @@ package main
 
 import (
 	"camunda-cloud-go-client/pkg/cc/client"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -32,8 +33,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Cluster", clusterName, " created with Id: ", clusterId)
 
 		for true {
-			time.Sleep(10 * time.Second)
-			client.GetClusterDetails(clusterId)
+			time.Sleep(5 * time.Second)
+			var status = client.GetClusterDetails(clusterId)
+			if status.Ready == "Healthy" {
+				marshal, _ := json.Marshal(status)
+				fmt.Println("> Cluster Status and details: ", string(marshal))
+			} else {
+				fmt.Println("> Waiting For the Cluster: ", clusterId, " to be ready ... ")
+			}
 		}
 
 		//fmt.Println("Deleting Cluster with Id: ", clusterId)

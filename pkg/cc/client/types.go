@@ -1,5 +1,20 @@
 package client
 
+type ClusterStatusResponse struct {
+	ClusterId     string        `json:"uuid"`
+	ClusterStatus ClusterStatus `json:"status"`
+}
+
+type ClusterStatus struct {
+	OperateStatus  string `json:"operateStatus"`
+	OperateURL     string `json:"operateUrl"`
+	Ready          string `json:"ready"`
+	ZeebeStatus    string `json:"zeebeStatus"`
+	ZeebeURL       string `json:"zeebeUrl"`
+	TaskListStatus string `json:"tasklistStatus"`
+	TaskListURL    string `json:"tasklistUrl"`
+}
+
 type ClusterCreationParams struct {
 	ClusterName  string `json:"name"`
 	ChannelId    string `json:"channelId"`
