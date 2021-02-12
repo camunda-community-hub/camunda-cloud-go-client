@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -71,6 +72,23 @@ func GetClusterParams() {
 	//marshal, _ := json.Marshal(clusterParams)
 	//
 	//fmt.Println("parsed: ", string(marshal))
+}
+
+func GetClusterDetails(clusterId string) {
+	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Fatalf("failed to create client cluster params, %v", err)
+	}
+
+	fmt.Println("response Status cluster params:", resp.Status)
+	fmt.Println("response Headers cluster params:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body cluster params :", string(body))
 }
 
 func CreateCluster(clusterName string) string {

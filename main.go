@@ -1,11 +1,11 @@
 package main
 
 import (
+	"camunda-cloud-go-client/pkg/cc/client"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
-	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 )
 
 var clientId = os.Getenv("CC_CLIENT_ID")
@@ -19,39 +19,34 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	var clusterName = "hello there"
 
 	fmt.Println("Attempting to Login ...")
-	var loginOk = Login(clientId, clientSecret)
+	var loginOk = client.Login(clientId, clientSecret)
 	if loginOk {
 		fmt.Println("Login Successful!")
 		fmt.Println("Fetching Cluster Creation Params ...")
-		GetClusterParams()
+		client.GetClusterParams()
 
 		fmt.Println("Creating Cluster", clusterName, " ... ")
 
-		var clusterId = CreateCluster(clusterName)
+		var clusterId = client.CreateCluster(clusterName)
 
 		fmt.Println("Cluster", clusterName, " created with Id: ", clusterId)
 
-		time.Sleep(10 * time.Second)
+		for true {
+			time.Sleep(10 * time.Second)
+			client.GetClusterDetails(clusterId)
+		}
 
-		fmt.Println("Deleting Cluster with Id: ", clusterId)
-
-		var deleted = DeleteCluster(clusterId)
-
-		fmt.Println("Cluster with Id: ", clusterId, "deleted: ", deleted)
+		//fmt.Println("Deleting Cluster with Id: ", clusterId)
+		//
+		//var deleted = client.DeleteCluster(clusterId)
+		//
+		//fmt.Println("Cluster with Id: ", clusterId, "deleted: ", deleted)
 
 	} else {
 		fmt.Println("Login Failed.")
 	}
 	//fmt.Fprintf(w, "Hello from:  "+title+"\n")
 }
-
-
-
-
-
-
-
-
 
 func main() {
 	http.HandleFunc("/", handler)
