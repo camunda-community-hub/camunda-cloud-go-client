@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
+	"camunda-cloud-go-client/cmd"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 )
 
 var clientId = os.Getenv("CC_CLIENT_ID")
@@ -58,4 +60,5 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":8080", nil)
+	cmd.Execute()
 }
