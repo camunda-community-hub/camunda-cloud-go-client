@@ -1,7 +1,7 @@
 package main
 
 import (
-	"camunda-cloud-go-client/pkg/cc/client"
+	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 	"encoding/json"
 	"fmt"
 	"net/http"
