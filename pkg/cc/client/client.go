@@ -192,3 +192,33 @@ func DeleteCluster(clusterId string) bool {
 	//fmt.Println("response Body delete cluster :", string(body))
 
 }
+
+// GetClusters from Camunda Cloud
+func GetClusters() ([]Cluster, error) {
+
+	data := []Cluster{}
+
+	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters", nil)
+
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Failed to get all clusters")
+		return data, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	err2 := json.Unmarshal(body, &data)
+
+	if err2 != nil {
+		log.Printf("Failed to unmarshal response body")
+		return data, err2
+	}
+
+	return data, nil
+}

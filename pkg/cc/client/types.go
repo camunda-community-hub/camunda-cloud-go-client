@@ -91,3 +91,29 @@ type Region struct {
 type ClusterCreatedResponse struct {
 	ClusterId string `json:"clusterId"`
 }
+
+type Cluster struct {
+	ID              string          `json:"uuid"`
+	Name            string          `json:"name"`
+	Channel         Channel         `json:"channel"`
+	Generation      Generation      `json:"generation"`
+	Created         string          `json:"created"`
+	K8sContext      K8sContext      `json:"k8sContext"`
+	ClusterMetadata ClusterMetadata `json:"metadata"`
+}
+
+type K8sContext struct {
+	ID     string `json:"uuid"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+	Zone   string `json:"zone"`
+}
+
+type ClusterMetadata struct {
+	ID                string `json:"uid"`
+	CreationTimestamp string `json:"creationTimestamp"`
+	Generation        int    `json:"generation"`
+	Name              string `json:"name"`
+	ResourceVersion   string `json:"resourceVersion"`
+	SelfLink          string `json:"selfLink"`
+}
