@@ -31,7 +31,7 @@ func handlerGet(value string, cmd cobra.Command) {
 	all, _ := cmd.Flags().GetBool("all")
 
 	if all {
-		ok := client.Login("bq~NI~MzG5KacsZn", "qZ1EwAdFF2F5MgyfnjnSO2TAvitMBn1s")
+		ok := client.Login("", "")
 
 		if ok {
 			fmt.Println("all:", all)
@@ -44,7 +44,7 @@ func handlerGet(value string, cmd cobra.Command) {
 	params, _ := cmd.Flags().GetBool("params")
 
 	if params {
-		ok := client.Login("bq~NI~MzG5KacsZn", "qZ1EwAdFF2F5MgyfnjnSO2TAvitMBn1s")
+		ok := client.Login("", "")
 
 		if ok {
 			fmt.Println("params:", params)
@@ -63,7 +63,7 @@ func handlerCreate(value string, cmd cobra.Command) {
 
 	if name != "" {
 
-		ok := client.Login("bq~NI~MzG5KacsZn", "qZ1EwAdFF2F5MgyfnjnSO2TAvitMBn1s")
+		ok := client.Login("", "")
 
 		if ok {
 			client.GetClusterParams()
