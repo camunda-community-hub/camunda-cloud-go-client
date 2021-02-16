@@ -62,7 +62,7 @@ func GetClusterParams() error {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster params, %v", err)
+		log.Printf("failed to create client cluster params, %v", err)
 		return err
 	}
 	//fmt.Println("response Status cluster params:", resp.Status)
@@ -71,7 +71,7 @@ func GetClusterParams() error {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterParams)
 	if err2 != nil {
-		log.Fatalf("failed to parse body cluster params, %v", err2)
+		log.Printf("failed to parse body cluster params, %v", err2)
 		return err2
 	}
 	//marshal, _ := json.Marshal(clusterParams)
@@ -89,7 +89,7 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster details, %v", err)
+		log.Printf("failed to create client cluster details, %v", err)
 		return clusterStatus, err
 	}
 
@@ -99,7 +99,7 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterStatusResponse)
 	if err2 != nil {
-		log.Fatalf("failed to parse body cluster details, %v", err2)
+		log.Printf("failed to parse body cluster details, %v", err2)
 		return clusterStatus, err2
 	}
 	clusterStatus = clusterStatusResponse.ClusterStatus
@@ -130,16 +130,17 @@ func CreateCluster(clusterName string) (string, error) {
 	//fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
 	//fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println("response Body:", string(body))
+
 	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
+		log.Printf("failed to create client, %v", err)
 		return "", err
 	}
 
 	err2 := json.Unmarshal(body, &clusterCreatedResponse)
 
 	if err2 != nil {
-		log.Fatalf("failed to parse body for create cluster, %v", err2)
+		log.Printf("Body to unmarshal: ", string(body))
+		log.Printf("failed to parse body for create cluster, %v", err2)
 		return "", err2
 	}
 
@@ -160,7 +161,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 	defer resp.Body.Close()
 
 	if err != nil {
-		log.Fatalf("failed to create client for login, %v", err)
+		log.Printf("failed to create client for login, %v", err)
 		return false, err
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -170,12 +171,12 @@ func Login(clientId string, clientSecret string) (bool, error) {
 		err2 := json.Unmarshal(body, &authResponsePayload)
 //		log.Printf("json from login parsed!")
 		if err2 != nil {
-			log.Fatalf("failed to parse body for login, %v", err2)
+			log.Printf("failed to parse body for login, %v", err2)
 			return false, err2
 		}
 		return true, nil
 	} else {
-		log.Fatalf("HTTP Error trying to login, %v", resp.StatusCode)
+		log.Printf("HTTP Error trying to login, %v", resp.StatusCode)
 		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
 	}
 }
@@ -188,7 +189,7 @@ func DeleteCluster(clusterId string) (bool, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster params, %v", err)
+		log.Printf("failed to create client cluster params, %v", err)
 		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
 	}
 
