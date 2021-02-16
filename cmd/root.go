@@ -32,11 +32,24 @@ var rootCmd = &cobra.Command{
 	Use:                   "camunda-cloud-go-client",
 	DisableFlagsInUseLine: true,
 	Short:                 "camunda-cloud-go-client CLI to manager Camunda Cloud Resources",
-	Long: `Commands: 
-	get	get clusters and zeebe clients from Camunda Cloud
-	delete	delete clusters or zeebe clients from Camunda Cloud
-	create	create clusters or zeebe clients from Camunda Cloud
-	`,
+	Long: `Features: 
+  # List all clusters
+  camunda-cloud-go-cli clusters get --all
+
+  # Get cluster from id
+  camunda-cloud-go-cli clusters get --id <cluster_id>
+
+  # Get cluster from name
+  camunda-cloud-go-cli clusters get --name <cluster_name>
+
+  # Delete cluster from id
+  camunda-cloud-go-cli clusters delete --id <cluster_id>
+
+  # Delete cluster from name
+  camunda-cloud-go-cli clusters delete --name <cluster_name>
+
+  # Create cluster from default configuration
+  camunda-cloud-go-cli clusters create --default --name <cluster_name>`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

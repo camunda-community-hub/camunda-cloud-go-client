@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/salaboy/camunda-cloud-go-client/cmd"
 	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 )
 
@@ -62,7 +63,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
-	// cmd.Execute()
+	// http.HandleFunc("/", handler)
+	// http.ListenAndServe(":8080", nil)
+	cmd.Execute()
 }
