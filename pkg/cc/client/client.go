@@ -71,7 +71,7 @@ func GetClusterParams() error {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterParams)
 	if err2 != nil {
-		log.Printf("failed to parse body cluster params, %v", err2)
+		log.Printf("failed to parse body cluster params, %v, %s", err2, string(body))
 		return err2
 	}
 	//marshal, _ := json.Marshal(clusterParams)
@@ -99,8 +99,9 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterStatusResponse)
 	if err2 != nil {
-		log.Printf("failed to parse body cluster details, %v", err2)
-		return clusterStatus, err2
+		log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
+		clusterStatus.Ready = "Not Found"
+		return clusterStatus, nil
 	}
 	clusterStatus = clusterStatusResponse.ClusterStatus
 	return clusterStatus, nil
@@ -182,7 +183,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 		err2 := json.Unmarshal(body, &authResponsePayload)
 		//		log.Printf("json from login parsed!")
 		if err2 != nil {
-			log.Printf("failed to parse body for login, %v", err2)
+			log.Printf("failed to parse body for login, %v, %s", err2, string(body))
 			return false, err2
 		}
 		return true, nil
@@ -239,7 +240,7 @@ func GetClusters() ([]Cluster, error) {
 	err2 := json.Unmarshal(body, &data)
 
 	if err2 != nil {
-		log.Printf("Failed to unmarshal response body")
+		log.Printf("Failed to unmarshal response body ->  %s", string(body))
 		return data, err2
 	}
 
