@@ -100,7 +100,8 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	err2 := json.Unmarshal(body, &clusterStatusResponse)
 	if err2 != nil {
 		log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
-		return clusterStatus, err2
+		clusterStatus.Ready = "Not Found"
+		return clusterStatus, nil
 	}
 	clusterStatus = clusterStatusResponse.ClusterStatus
 	return clusterStatus, nil
