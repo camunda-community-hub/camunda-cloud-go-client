@@ -109,16 +109,14 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 
 func CreateCluster(clusterName string) (string, error) {
 
-	clusters, getClusterErr := GetClusters()
+	cluster, getClusterErr := GetClusterByName(clusterName)
 
 	if getClusterErr != nil {
 		return "", getClusterErr
 	}
 
-	for _, cluster := range clusters {
-		if cluster.Name == clusterName {
-			return "", errors.New("Cluster name already exists on Camunda Cloud")
-		}
+	if cluster.ID != "" {
+		return "", errors.New("Cluster name already exists on Camunda Cloud")
 	}
 
 	var channel = getDefaultClusterChannel()
@@ -244,6 +242,28 @@ func GetClusters() ([]Cluster, error) {
 		log.Printf("Failed to unmarshal response body")
 		return data, err2
 	}
+
+	return data, nil
+}
+
+func GetClusterByName(name string) (Cluster, error) {
+
+	data := Cluster{}
+
+	clusters, err := GetClusters()
+
+	if err != nil {
+		return data, err
+	}
+
+	for _, cluster := range clusters {
+
+		if cluster.Name == name {
+			return cluster, nil
+		}
+	}
+
+	fmt.Println("Cluster with name", name, "not found")
 
 	return data, nil
 }
