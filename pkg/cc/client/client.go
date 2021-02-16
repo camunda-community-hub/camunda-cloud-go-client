@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -191,4 +192,22 @@ func DeleteCluster(clusterId string) bool {
 
 	//fmt.Println("response Body delete cluster :", string(body))
 
+}
+
+func GetClusters() {
+	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters", nil)
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	defer resp.Request.GetBody()
+
+	if err != nil {
+		log.Fatalf("failed to create client for get clusters, %v", err)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	fmt.Println("response body clusters:", string(body))
 }

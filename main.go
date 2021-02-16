@@ -1,7 +1,6 @@
 package main
 
 import (
-	"camunda-cloud-go-client/cmd"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -60,5 +59,5 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":8080", nil)
-	cmd.Execute()
+	// cmd.Execute()
 }
