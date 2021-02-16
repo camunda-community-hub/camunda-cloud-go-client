@@ -108,6 +108,19 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 }
 
 func CreateCluster(clusterName string) (string, error) {
+
+	clusters, getClusterErr := GetClusters()
+
+	if getClusterErr != nil {
+		return "", getClusterErr
+	}
+
+	for _, cluster := range clusters {
+		if cluster.Name == clusterName {
+			return "", errors.New("Cluster name already exists on Camunda Cloud")
+		}
+	}
+
 	var channel = getDefaultClusterChannel()
 	var clusterPlan = getDevelopmentClusterPlan()
 	var region = getDefaultRegion()
@@ -168,7 +181,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 	//fmt.Println("response Body:", string(body))
 	if resp.StatusCode == 200 {
 		err2 := json.Unmarshal(body, &authResponsePayload)
-//		log.Printf("json from login parsed!")
+		//		log.Printf("json from login parsed!")
 		if err2 != nil {
 			log.Fatalf("failed to parse body for login, %v", err2)
 			return false, err2
