@@ -20,7 +20,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	var clusterName = "hello there"
 
 	fmt.Println("Attempting to Login ...")
-	var loginOk = client.Login(clientId, clientSecret)
+	var loginOk, _ = client.Login(clientId, clientSecret)
 	if loginOk {
 		fmt.Println("Login Successful!")
 		fmt.Println("Fetching Cluster Creation Params ...")
@@ -28,13 +28,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Creating Cluster", clusterName, " ... ")
 
-		var clusterId = client.CreateCluster(clusterName)
+		var clusterId, _ = client.CreateCluster(clusterName)
 
 		fmt.Println("Cluster", clusterName, " created with Id: ", clusterId)
 
 		for true {
 			time.Sleep(5 * time.Second)
-			var status = client.GetClusterDetails(clusterId)
+			var status, _ = client.GetClusterDetails(clusterId)
 			if status.Ready == "Healthy" {
 				marshal, _ := json.Marshal(status)
 				fmt.Println("> Cluster Status and details: ", string(marshal))
