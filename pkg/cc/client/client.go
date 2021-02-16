@@ -109,6 +109,17 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 }
 
 func CreateCluster(clusterName string) (string, error) {
+
+	cluster, getClusterErr := GetClusterByName(clusterName)
+
+	if getClusterErr != nil {
+		return "", getClusterErr
+	}
+
+	if cluster.ID != "" {
+		return "", errors.New("Cluster name already exists on Camunda Cloud")
+	}
+
 	var channel = getDefaultClusterChannel()
 	var clusterPlan = getDevelopmentClusterPlan()
 	var region = getDefaultRegion()
@@ -170,7 +181,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 	//fmt.Println("response Body:", string(body))
 	if resp.StatusCode == 200 {
 		err2 := json.Unmarshal(body, &authResponsePayload)
-//		log.Printf("json from login parsed!")
+		//		log.Printf("json from login parsed!")
 		if err2 != nil {
 			log.Printf("failed to parse body for login, %v, %s", err2, string(body))
 			return false, err2
@@ -232,6 +243,28 @@ func GetClusters() ([]Cluster, error) {
 		log.Printf("Failed to unmarshal response body ->  %s", string(body))
 		return data, err2
 	}
+
+	return data, nil
+}
+
+func GetClusterByName(name string) (Cluster, error) {
+
+	data := Cluster{}
+
+	clusters, err := GetClusters()
+
+	if err != nil {
+		return data, err
+	}
+
+	for _, cluster := range clusters {
+
+		if cluster.Name == name {
+			return cluster, nil
+		}
+	}
+
+	fmt.Println("Cluster with name", name, "not found")
 
 	return data, nil
 }
