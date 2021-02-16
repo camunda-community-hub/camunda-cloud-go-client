@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -50,7 +51,7 @@ func getDefaultRegion() Region {
 	return defaultRegion
 }
 
-func GetClusterParams() {
+func GetClusterParams() error {
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/parameters", nil)
 	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
@@ -61,7 +62,8 @@ func GetClusterParams() {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster params, %v", err)
+		log.Printf("failed to create client cluster params, %v", err)
+		return err
 	}
 	//fmt.Println("response Status cluster params:", resp.Status)
 	//fmt.Println("response Headers cluster params:", resp.Header)
@@ -69,22 +71,26 @@ func GetClusterParams() {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterParams)
 	if err2 != nil {
-		log.Fatalf("failed to parse body cluster params, %v", err2)
+		log.Printf("failed to parse body cluster params, %v, %s", err2, string(body))
+		return err2
 	}
 	//marshal, _ := json.Marshal(clusterParams)
 	//
 	//fmt.Println("parsed: ", string(marshal))
+	return nil
 }
 
-func GetClusterDetails(clusterId string) ClusterStatus {
+func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
 
+	var clusterStatus = ClusterStatus{}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster details, %v", err)
+		log.Printf("failed to create client cluster details, %v", err)
+		return clusterStatus, err
 	}
 
 	//fmt.Println("response Status cluster params:", resp.Status)
@@ -93,14 +99,27 @@ func GetClusterDetails(clusterId string) ClusterStatus {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterStatusResponse)
 	if err2 != nil {
-		log.Fatalf("failed to parse body cluster details, %v", err2)
+		log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
+		clusterStatus.Ready = "Not Found"
+		return clusterStatus, nil
 	}
-
-	return clusterStatusResponse.ClusterStatus
+	clusterStatus = clusterStatusResponse.ClusterStatus
+	return clusterStatus, nil
 
 }
 
-func CreateCluster(clusterName string) string {
+func CreateCluster(clusterName string) (string, error) {
+
+	cluster, getClusterErr := GetClusterByName(clusterName)
+
+	if getClusterErr != nil {
+		return "", getClusterErr
+	}
+
+	if cluster.ID != "" {
+		return "", errors.New("Cluster name already exists on Camunda Cloud")
+	}
+
 	var channel = getDefaultClusterChannel()
 	var clusterPlan = getDevelopmentClusterPlan()
 	var region = getDefaultRegion()
@@ -123,21 +142,24 @@ func CreateCluster(clusterName string) string {
 	//fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
 	//fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println("response Body:", string(body))
+
 	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
+		log.Printf("failed to create client, %v", err)
+		return "", err
 	}
 
 	err2 := json.Unmarshal(body, &clusterCreatedResponse)
 
 	if err2 != nil {
-		log.Fatalf("failed to parse body for login, %v", err2)
+		log.Printf("Body to unmarshal: ", string(body))
+		log.Printf("failed to parse body for create cluster, %v", err2)
+		return "", err2
 	}
 
-	return clusterCreatedResponse.ClusterId
+	return clusterCreatedResponse.ClusterId, nil
 }
 
-func Login(clientId string, clientSecret string) bool {
+func Login(clientId string, clientSecret string) (bool, error) {
 
 	jsonStr, _ := json.Marshal(NewAuthRequestPayload(clientId, clientSecret))
 
@@ -151,26 +173,27 @@ func Login(clientId string, clientSecret string) bool {
 	defer resp.Body.Close()
 
 	if err != nil {
-		log.Fatalf("failed to create client for login, %v", err)
+		log.Printf("failed to create client for login, %v", err)
+		return false, err
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println("response Status:", resp.Status)
 	//fmt.Println("response Body:", string(body))
 	if resp.StatusCode == 200 {
 		err2 := json.Unmarshal(body, &authResponsePayload)
-		log.Printf("json from login parsed!")
+		//		log.Printf("json from login parsed!")
 		if err2 != nil {
-			log.Fatalf("failed to parse body for login, %v", err2)
+			log.Printf("failed to parse body for login, %v, %s", err2, string(body))
+			return false, err2
 		}
-		return true
+		return true, nil
 	} else {
-		log.Fatalf("HTTP Error trying to login, %v", resp.StatusCode)
-		return false
+		log.Printf("HTTP Error trying to login, %v", resp.StatusCode)
+		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
 	}
-	return false
 }
 
-func DeleteCluster(clusterId string) bool {
+func DeleteCluster(clusterId string) (bool, error) {
 	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
 
@@ -178,14 +201,14 @@ func DeleteCluster(clusterId string) bool {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalf("failed to create client cluster params, %v", err)
+		log.Printf("failed to create client cluster params, %v", err)
+		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
 	}
 
 	if resp.StatusCode == 200 {
-		return true
-	} else {
-		return false
+		return true, nil
 	}
+	return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
 	//fmt.Println("response Status delete cluster:", resp.Status)
 	//fmt.Println("response Headers delete cluster:", resp.Header)
 	//body, _ := ioutil.ReadAll(resp.Body)
@@ -194,20 +217,54 @@ func DeleteCluster(clusterId string) bool {
 
 }
 
-func GetClusters() {
+// GetClusters from Camunda Cloud
+func GetClusters() ([]Cluster, error) {
+
+	data := []Cluster{}
+
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters", nil)
+
 	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 
-	defer resp.Request.GetBody()
-
 	if err != nil {
-		log.Fatalf("failed to create client for get clusters, %v", err)
+		log.Printf("Failed to get all clusters")
+		return data, err
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	fmt.Println("response body clusters:", string(body))
+	err2 := json.Unmarshal(body, &data)
+
+	if err2 != nil {
+		log.Printf("Failed to unmarshal response body ->  %s", string(body))
+		return data, err2
+	}
+
+	return data, nil
+}
+
+func GetClusterByName(name string) (Cluster, error) {
+
+	data := Cluster{}
+
+	clusters, err := GetClusters()
+
+	if err != nil {
+		return data, err
+	}
+
+	for _, cluster := range clusters {
+
+		if cluster.Name == name {
+			return cluster, nil
+		}
+	}
+
+	fmt.Println("Cluster with name", name, "not found")
+
+	return data, nil
 }
