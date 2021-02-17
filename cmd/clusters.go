@@ -77,10 +77,8 @@ var getClusterCmd = &cobra.Command{
 		} else {
 
 			if name != "" {
-
 				cluster, _ := client.GetClusterByName(name)
 				showCluster(cluster)
-
 			} else {
 
 				if all {
@@ -109,10 +107,8 @@ var createClusterCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if name != "" {
-
 			client.GetClusterParams()
 			clusterID, err := client.CreateCluster(name)
-
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -129,8 +125,13 @@ var deleteClusterCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if id != "" {
-			client.DeleteCluster(id)
-			fmt.Println("Cluster deleted successfully")
+			success, _ := client.DeleteCluster(id)
+
+			if success {
+				fmt.Println("Cluster deleted successfully")
+			} else {
+				fmt.Println("Error: We can't delete your cluster")
+			}
 		}
 	},
 }
