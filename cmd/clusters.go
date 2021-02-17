@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
+Copyright © 2021 Matheus Cruz matheuscruz.dev@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,17 +32,21 @@ var (
 	plan       string
 )
 
-var clusterCmd = &cobra.Command{
-	Use:   "clusters [options]",
-	Short: "Manage your cluster's resources on Camunda Cloud",
-	Long: `Used together [OPTIONS] like get, create, delete for manage your resources on Camunda Cloud. For example:
+var (
+	deleteExample = `
+
+  # Delete cluster by id
+  camunda-cloud-go-cli clusters delete --id=<cluster_id>`
+
+	getExample = `
 
   # List all clusters
   camunda-cloud-go-cli clusters get --all
    
   # Get cluster by name
-  camunda-cloud-go-cli clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
-	
+  camunda-cloud-go-cli clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')`
+	createExample = `
+
   # Create cluster with default configuration
   camunda-cloud-go-cli clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
  
@@ -52,36 +56,37 @@ var clusterCmd = &cobra.Command{
 	--channel=<channel_id>
 	--generation=<generation_id>
 	--region=<region_id>
-	--plan=<plan_type_id>
-	
-  # Delete cluster by id
-  camunda-cloud-go-cli clusters delete --id=<cluster_id>`,
+	--plan=<plan_type_id>`
+)
+
+var clusterCmd = &cobra.Command{
+	Use:   "clusters [options]",
+	Short: "Manage your cluster's resources on Camunda Cloud",
+	Long:  "Used together [OPTIONS] like get, create, delete for manage your resources on Camunda Cloud. For example:" + getExample + createExample + deleteExample,
 }
 
 var getClusterCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get your clusters resources",
-	Long: `Used together with clusters command, to get your clusters on Camunda Cloud. For example:
-
-  # List all clusters
-  camunda-cloud-go-cli clusters get --all
- 
-  # Get cluster by name
-  camunda-cloud-go-cli clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')`,
+	Short: "Get clusters",
+	Long:  "Used together with clusters command, to get your clusters on Camunda Cloud. For example:" + getExample,
 	Run: func(cmd *cobra.Command, args []string) {
+		all, _ := cmd.Flags().GetBool("all")
 
-		if name != "" {
-
-			cluster, _ := client.GetClusterByName(name)
-			showCluster(cluster)
-
+		if name != "" && all {
+			fmt.Println("Error: --all and --name cannot be specified together")
 		} else {
 
-			all, _ := cmd.Flags().GetBool("all")
+			if name != "" {
 
-			if all {
-				clusters, _ := client.GetClusters()
-				showClusters(clusters)
+				cluster, _ := client.GetClusterByName(name)
+				showCluster(cluster)
+
+			} else {
+
+				if all {
+					clusters, _ := client.GetClusters()
+					showClusters(clusters)
+				}
 			}
 		}
 	},
@@ -90,20 +95,7 @@ var getClusterCmd = &cobra.Command{
 var createClusterCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create cluster",
-	Long: `Used together clusters command, to create your clusters on Camunda Cloud. For example:
-	Used together with clusters command, to get your clusters on Camunda Cloud. For example:
-
-  # Create cluster with default configuration
-  camunda-cloud-go-cli clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
- 
-  # Crate cluster with own configuration
-  camunda-cloud-go-cli clusters create 
-    --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>'
-	--channel=<channel_id>
-	--generation=<generation_id>
-	--region=<region_id>
-	--plan=<plan_type_id>
-  `,
+	Long:  "Used together clusters command, to create your clusters on Camunda Cloud. For example:" + createExample,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		def, _ := cmd.Flags().GetBool("default")
 
@@ -133,11 +125,7 @@ var createClusterCmd = &cobra.Command{
 var deleteClusterCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete cluster",
-	Long: `Used together with clusters command, to delete your clusters on Camunda Cloud. For example:
-
-  # Delete cluster by id
-  camunda-cloud-go-cli clusters delete --id=<cluster_id>
-`,
+	Long:  "Used together with clusters command, to delete your clusters on Camunda Cloud. For example:" + deleteExample,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if id != "" {
