@@ -264,7 +264,5 @@ func GetClusterByName(name string) (Cluster, error) {
 		}
 	}
 
-	fmt.Println("Cluster with name", name, "not found")
-
 	return data, nil
 }
