@@ -51,33 +51,29 @@ func getDefaultRegion() Region {
 	return defaultRegion
 }
 
-func GetClusterParams() error {
+func GetClusterParams() (*ClusterParams, error) {
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/parameters", nil)
 	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
-
-	//fmt.Println("Request cluster params:", req)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	if err != nil {
 		log.Printf("failed to create client cluster params, %v", err)
-		return err
+		return &clusterParams, err
 	}
-	//fmt.Println("response Status cluster params:", resp.Status)
-	//fmt.Println("response Headers cluster params:", resp.Header)
+
 	body, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println("response Body cluster params :", string(body))
+
 	err2 := json.Unmarshal(body, &clusterParams)
+
 	if err2 != nil {
 		log.Printf("failed to parse body cluster params, %v, %s", err2, string(body))
-		return err2
+		return &clusterParams, err2
 	}
-	//marshal, _ := json.Marshal(clusterParams)
-	//
-	//fmt.Println("parsed: ", string(marshal))
-	return nil
+
+	return &clusterParams, nil
 }
 
 func GetClusterDetails(clusterId string) (ClusterStatus, error) {
@@ -108,16 +104,49 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 
 }
 
-func CreateCluster(clusterName string) (string, error) {
+func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, error) {
 
-	cluster, getClusterErr := GetClusterByName(clusterName)
+	_, existsErr := clusterExistsValidator(clusterParams.ClusterName)
 
-	if getClusterErr != nil {
-		return "", getClusterErr
+	if existsErr != nil {
+		return "", existsErr
 	}
 
-	if cluster.ID != "" {
-		return "", errors.New("Cluster name already exists on Camunda Cloud")
+	jsonStr, _ := json.Marshal(clusterParams)
+
+	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters", bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Printf("failed to create client, %v", err)
+		return "", err
+	}
+
+	err2 := json.Unmarshal(body, &clusterCreatedResponse)
+
+	if err2 != nil {
+		log.Printf("Body to unmarshal: ", string(body))
+		log.Printf("failed to parse body for create cluster, %v", err2)
+		return "", err2
+	}
+
+	return clusterCreatedResponse.ClusterId, nil
+}
+
+func CreateClusterDefault(clusterName string) (string, error) {
+
+	_, existsErr := clusterExistsValidator(clusterName)
+
+	if existsErr != nil {
+		return "", existsErr
 	}
 
 	var channel = getDefaultClusterChannel()
@@ -265,4 +294,19 @@ func GetClusterByName(name string) (Cluster, error) {
 	}
 
 	return data, nil
+}
+
+func clusterExistsValidator(clusterName string) (string, error) {
+
+	cluster, err := GetClusterByName(clusterName)
+
+	if err != nil {
+		return "", err
+	}
+
+	if cluster.ID != "" {
+		return "", errors.New("Cluster name already exists on Camunda Cloud")
+	}
+
+	return "", nil
 }

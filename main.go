@@ -30,7 +30,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Creating Cluster", clusterName, " ... ")
 
-		var clusterId, err = client.CreateCluster(clusterName)
+		var clusterId, err = client.CreateClusterDefault(clusterName)
 
 		if err != nil {
 			fmt.Println(err.Error())
