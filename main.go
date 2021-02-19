@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/salaboy/camunda-cloud-go-client/cmd"
 	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 )
 
@@ -29,7 +30,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Creating Cluster", clusterName, " ... ")
 
-		var clusterId, err = client.CreateCluster(clusterName)
+		var clusterId, err = client.CreateClusterDefault(clusterName)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -62,6 +63,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	// http.HandleFunc("/", handler)
+	// http.ListenAndServe(":8080", nil)
+	cmd.Execute()
 }
