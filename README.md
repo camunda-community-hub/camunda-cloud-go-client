@@ -18,8 +18,8 @@ and Create a new client.
 You need to copy and save the Client Id and the Secret Id from that client. 
 
 You need to export the following variables for this command to interact with a Camunda Cloud Account:
-  - export CC_CLIENT_ID=<YOUR CLIENT ID>
-  - export CC_CLIENT_SECRET=<YOUR CLIENT SECRET>
+  - export CC_CLIENT_ID=`<YOUR CLIENT ID>`
+  - export CC_CLIENT_SECRET=`<YOUR CLIENT SECRET>`
   
   Available Commands:  
   
