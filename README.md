@@ -22,23 +22,28 @@ You need to export the following variables for this command to interact with a C
   - export CC_CLIENT_SECRET=<YOUR CLIENT SECRET>
   
   Available Commands:  
-  # List all clusters
-  cc clusters get --all
+  
+  **List all clusters**
+  `cc clusters get --all`
 
-  # Get cluster from id
-  cc clusters get --id <cluster_id>
+  **Get cluster from id**
+  `cc clusters get --id <cluster_id>`
 
-  # Get cluster from name
-  cc clusters get --name <cluster_name>
+  **Get cluster from name**
+  `cc clusters get --name <cluster_name>`
 
-  # Delete cluster from id
-  cc clusters delete --id <cluster_id>
+  **Delete cluster from id**
+  `cc clusters delete --id <cluster_id>`
 
-  # Delete cluster from name
-  cc clusters delete --name <cluster_name>
+  **Delete cluster from name**
+  `cc clusters delete --name <cluster_name>`
 
-  # Create cluster from default configuration
-  cc clusters create --default --name <cluster_name>`,
+  **Create cluster from default configuration**
+  `cc clusters create --default --name <cluster_name>`
+
+# Feedback / Contribute back
+
+This is a super simple project for you to contribute. Feel free to create issues or send PRs with improvements. 
 
 Consumers: 
 - [Zeebe Kubernetes Operator V3](https://github.com/salaboy/zeebe-operator-cc)
