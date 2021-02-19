@@ -34,10 +34,10 @@ spec:
             source /workspace/source/.jx/variables.sh
             export CDF_SINK=http://backend.35.204.61.61.xip.io/api/events
             cdf pipeline started --type module --module cc-go-client --project zeebe-operator --id $VERSION || true
-        - name: build-make-build
-          resources: {}
-        - name: build-container-build
-          resources: {}
+        - name: release-binary
+          resources: { }
+        - name: build-and-push-image
+          resources: { }
         - image: gcr.io/camunda-researchanddevelopment/cd-flow:0.0.10
           name: cdf-artifact-built
           resources: { }
@@ -46,14 +46,23 @@ spec:
             source /workspace/source/.jx/variables.sh
             export CDF_SINK=http://backend.35.204.61.61.xip.io/api/events
             cdf artifact built --module cc-go-client --pipelineId $VERSION --project zeebe-operator --id cc-go-client || true
+        - name: chart-docs
+            resources: { }
+        - name: changelog
+          resources: { }
+        - name: release-chart
+          resources: { }
+        - name: upload-binaries
+          resources: { }
+        - image: gcr.io/camunda-researchanddevelopment/cd-flow:0.0.10
+          name: cdf-artifact-released-finished
+          resources: { }
+          script: |
+            #!/usr/bin/env sh
+            source /workspace/source/.jx/variables.sh
+            export CDF_SINK=http://backend.35.204.61.61.xip.io/api/events
             cdf artifact released --module cc-go-client --pipelineId $VERSION --project zeebe-operator --id cd-flow-backend
             cdf pipeline finished --type module --module cc-go-client --project zeebe-operator --id $VERSION || true
-        - name: promote-changelog
-          resources: {}
-#        - name: promote-helm-release
-#          resources: {}
-#        - name: promote-jx-promote
-#          resources: {}
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 240h0m0s
