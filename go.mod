@@ -1,4 +1,4 @@
-module github.com/salaboy/camunda-cloud-go-client
+module github.com/camunda-community-hub/camunda-cloud-go-client
 
 go 1.15
 

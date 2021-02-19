@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/salaboy/camunda-cloud-go-client/cmd"
-	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
+	"github.com/camunda-community-hub/camunda-cloud-go-client/cmd"
+	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"os"
 )
 
