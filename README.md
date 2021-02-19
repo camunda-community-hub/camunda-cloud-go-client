@@ -12,7 +12,6 @@ This repository also contains a Go Library client to consume the Camunda Cloud M
 
 ## Usage
 
-
 You can create a Camunda Cloud Account here: https://accounts.cloud.camunda.io/signup
   
 Then you need to go to `<YOUR USER>(Top right corner) -> Organization Settings -> Cloud Management API` 
