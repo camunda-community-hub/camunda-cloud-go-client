@@ -18,7 +18,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/salaboy/camunda-cloud-go-client/pkg/cc/client"
 	"github.com/spf13/cobra"
 )
@@ -36,25 +35,25 @@ var (
 	deleteExample = `
 
   # Delete cluster by id
-  camunda-cloud-go-cli clusters delete --id=<cluster_id>`
+  cc clusters delete --id=<cluster_id>`
 
 	getExample = `
 
   # List all clusters
-  camunda-cloud-go-cli clusters get --all
+  cc clusters get --all
    
   # Get cluster by name
-  camunda-cloud-go-cli clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
+  cc clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
 
   # Get params to create a cluster
-  camunda-cloud-go-cli clusters get --params`
+  cc clusters get --params`
 	createExample = `
 
   # Create cluster with default configuration
-  camunda-cloud-go-cli clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
+  cc clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
  
   # Crate cluster with custom configuration
-  camunda-cloud-go-cli clusters create 
+  cc clusters create 
     --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>'
 	--channel=<channel_id>
 	--generation=<generation_id>
@@ -180,8 +179,6 @@ var deleteClusterCmd = &cobra.Command{
 }
 
 func init() {
-
-	client.Login("ac0CG_dbWF9XTm7j", "QlcboMoQeEjCXSUEo8hFH2n.qgEF3kW4")
 
 	clusterCmd.AddCommand(getClusterCmd)
 	clusterCmd.AddCommand(createClusterCmd)

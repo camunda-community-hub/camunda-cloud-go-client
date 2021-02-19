@@ -29,27 +29,35 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:                   "camunda-cloud-go-client",
+	Use:                   "cc",
 	DisableFlagsInUseLine: true,
-	Short:                 "camunda-cloud-go-client CLI to manager Camunda Cloud Resources",
-	Long: `Features: 
+	Short:                 "Camunda Cloud CLI to manage Camunda Cloud Resources",
+	Long: `Camunda Cloud CLI to interact with Camunda Cloud Resources.
+  You can create a Camunda Cloud Account here: https://accounts.cloud.camunda.io/signup
+  Then you need to go to <YOUR USER>(Top right corner) -> Organization Settings -> Cloud Management API 
+  and Create a new client. You need to copy and save the Client Id and the Secret Id from that client. 
+  You need to export the following variables for this command to interact with a Camunda Cloud Account:
+  - export CC_CLIENT_ID=<YOUR CLIENT ID>
+  - export CC_CLIENT_SECRET=<YOUR CLIENT SECRET>
+  
+  Available Commands:  
   # List all clusters
-  camunda-cloud-go-cli clusters get --all
+  cc clusters get --all
 
   # Get cluster from id
-  camunda-cloud-go-cli clusters get --id <cluster_id>
+  cc clusters get --id <cluster_id>
 
   # Get cluster from name
-  camunda-cloud-go-cli clusters get --name <cluster_name>
+  cc clusters get --name <cluster_name>
 
   # Delete cluster from id
-  camunda-cloud-go-cli clusters delete --id <cluster_id>
+  cc clusters delete --id <cluster_id>
 
   # Delete cluster from name
-  camunda-cloud-go-cli clusters delete --name <cluster_name>
+  cc clusters delete --name <cluster_name>
 
   # Create cluster from default configuration
-  camunda-cloud-go-cli clusters create --default --name <cluster_name>`,
+  cc clusters create --default --name <cluster_name>`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
