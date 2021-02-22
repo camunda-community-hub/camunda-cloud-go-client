@@ -47,4 +47,4 @@ This is a super simple project for you to contribute. Feel free to create issues
 
 Consumers: 
 - [Zeebe Kubernetes Operator V3](https://github.com/salaboy/zeebe-operator-cc)
-- 
+
