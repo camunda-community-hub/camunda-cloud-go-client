@@ -1,8 +1,6 @@
 <img src="https://img.shields.io/badge/Community%20Extension-An%20open%20source%20community%20maintained%20project-FF4700"> <img src="https://img.shields.io/badge/Lifecycle-Incubating-blue">
 
 # Camunda Cloud CLI and Go Client Library
-
-
 Camunda Cloud CLI to interact with Camunda Cloud Resources.
 
 This repository contains a CLI tool to interact with your Camunda Cloud account via the command-line. 
