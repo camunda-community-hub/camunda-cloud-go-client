@@ -133,7 +133,7 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 	err2 := json.Unmarshal(body, &clusterCreatedResponse)
 
 	if err2 != nil {
-		log.Printf("Body to unmarshal: ", string(body))
+		log.Printf("Body to unmarshal: %s", string(body))
 		log.Printf("failed to parse body for create cluster, %v", err2)
 		return "", err2
 	}
@@ -180,7 +180,7 @@ func CreateClusterDefault(clusterName string) (string, error) {
 	err2 := json.Unmarshal(body, &clusterCreatedResponse)
 
 	if err2 != nil {
-		log.Printf("Body to unmarshal: ", string(body))
+		log.Printf("Body to unmarshal: %s ", string(body))
 		log.Printf("failed to parse body for create cluster, %v", err2)
 		return "", err2
 	}
@@ -218,7 +218,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 		return true, nil
 	} else {
 		log.Printf("HTTP Error trying to login, %v", resp.StatusCode)
-		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
+		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %d", resp.StatusCode))
 	}
 }
 
@@ -231,13 +231,13 @@ func DeleteCluster(clusterId string) (bool, error) {
 
 	if err != nil {
 		log.Printf("failed to create client cluster params, %v", err)
-		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
+		return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %d", resp.StatusCode))
 	}
 
 	if resp.StatusCode == 200 {
 		return true, nil
 	}
-	return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %i", resp.StatusCode))
+	return false, errors.New(fmt.Sprintf("HTTP Error trying to login: %d", resp.StatusCode))
 	//fmt.Println("response Status delete cluster:", resp.Status)
 	//fmt.Println("response Headers delete cluster:", resp.Header)
 	//body, _ := ioutil.ReadAll(resp.Body)

@@ -67,3 +67,40 @@ watch:
 
 skaffold-run: build
 	skaffold run -p dev
+
+.PHONY: goreleaser
+goreleaser:
+	step-go-releaser --organisation=$(ORG) --revision=$(REV) --branch=$(BRANCH) --build-date=$(BUILD_DATE) --go-version=$(GO_VERSION) --root-package=$(ROOT_PACKAGE) --version=$(VERSION)
+
+.PHONY: release
+release: clean linux test
+
+release-all: release linux win darwin
+
+.PHONY: clean
+clean: ## Clean the generated artifacts
+	rm -rf build release dist
+
+.PHONY: fmt
+fmt: importfmt ## Format the code
+	$(eval FORMATTED = $(shell $(GO) fmt ./...))
+	@if [ "$(FORMATTED)" == "" ]; \
+      	then \
+      	    echo "All Go files properly formatted"; \
+      	else \
+      		echo "Fixed formatting for: $(FORMATTED)"; \
+      	fi
+
+.PHONY: importfmt
+importfmt: get-fmt-deps
+	@echo "Formatting the imports..."
+	goimports -w $(GO_DEPENDENCIES)
+
+.PHONY: lint
+lint: ## Lint the code
+	./hack/gofmt.sh
+	./hack/linter.sh
+	./hack/generate.sh
+
+.PHONY: all
+all: fmt build test lint
