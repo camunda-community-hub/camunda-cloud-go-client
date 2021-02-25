@@ -49,7 +49,8 @@ spec:
             source /workspace/source/.jx/variables.sh
             export CDF_SINK=http://backend.35.204.61.61.xip.io/api/events
             cdf artifact built --module cc-go-client --pipelineId $VERSION --project zeebe-operator --id cc-go-client || true
-        - name: promote-changelog
+        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
+          name: changelog
           resources: {}
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
           name: upload-binaries
