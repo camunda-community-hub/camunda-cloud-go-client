@@ -53,7 +53,10 @@ spec:
           resources: { }
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
           name: changelog
-          resources: { }
+          script: |
+            #!/usr/bin/env sh
+            source .jx/variables.sh
+            jx changelog create --verbose --header-file=hack/changelog-header.md --version=$VERSION --rev=$PULL_BASE_SHA --output-markdown=changelog.md --update-release=true
         - image: gcr.io/camunda-researchanddevelopment/cd-flow:0.0.10
           name: cdf-artifact-released-finished
           resources: {}
