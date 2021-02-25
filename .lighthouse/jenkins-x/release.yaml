@@ -37,7 +37,8 @@ spec:
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
           name: release-binary
           resources: { }
-        - name: build-container-build
+        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/go-plugin/release.yaml@versionStream
+          name: build-and-push-image
           resources: {}
         - image: gcr.io/camunda-researchanddevelopment/cd-flow:0.0.10
           name: cdf-artifact-built
