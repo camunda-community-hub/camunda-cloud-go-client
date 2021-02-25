@@ -6,7 +6,7 @@ before:
     - go mod download
 
 builds:
-  - id: cc
+  - id: cc-ctl
     # Path to main.go file or main package.
     # Default is `.`.
     main: ./main.go
@@ -14,7 +14,7 @@ builds:
     # Binary name.
     # Can be a path (e.g. `bin/app`) to wrap the binary in a directory.
     # Default is the name of the project directory.
-    binary: cc
+    binary: cc-ctl
 
     # Custom ldflags templates.
     # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
@@ -38,15 +38,15 @@ builds:
       - arm64
 
 archives:
-  - name_template: "cc-{{ .Os }}-{{ .Arch }}"
+  - name_template: "cc-ctl-{{ .Os }}-{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
 
 checksum:
   # You can change the name of the checksums file.
-  # Default is `cc_{{ .Version }}_checksums.txt`.
-  name_template: "cc-checksums.txt"
+  # Default is `cc-ctl_{{ .Version }}_checksums.txt`.
+  name_template: "cc-ctl-checksums.txt"
 
   # Algorithm to be used.
   # Accepted options are sha256, sha512, sha1, crc32, md5, sha224 and sha384.

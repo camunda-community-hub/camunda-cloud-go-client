@@ -35,25 +35,25 @@ var (
 	deleteExample = `
 
   # Delete cluster by id
-  cc clusters delete --id=<cluster_id>`
+  cc-ctl clusters delete --id=<cluster_id>`
 
 	getExample = `
 
   # List all clusters
-  cc clusters get --all
+  cc-ctl clusters get --all
    
   # Get cluster by name
-  cc clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
+  cc-ctl clusters get --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
 
   # Get params to create a cluster
-  cc clusters get --params`
+  cc-ctl clusters get --params`
 	createExample = `
 
   # Create cluster with default configuration
-  cc clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
+  cc-ctl clusters create --default --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>')
  
   # Crate cluster with custom configuration
-  cc clusters create 
+  cc-ctl clusters create 
     --name=<cluster_name> (If your cluster have a composite name, use: --name='<cluster name>'
 	--channel=<channel_id>
 	--generation=<generation_id>

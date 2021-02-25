@@ -29,7 +29,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:                   "cc",
+	Use:                   "cc-ctl",
 	DisableFlagsInUseLine: true,
 	Short:                 "Camunda Cloud CLI to manage Camunda Cloud Resources",
 	Long: `Camunda Cloud CLI to interact with Camunda Cloud Resources.
@@ -42,22 +42,22 @@ var rootCmd = &cobra.Command{
   
   Available Commands:  
   # List all clusters
-  cc clusters get --all
+  cc-ctl clusters get --all
 
   # Get cluster from id
-  cc clusters get --id <cluster_id>
+  cc-ctl clusters get --id <cluster_id>
 
   # Get cluster from name
-  cc clusters get --name <cluster_name>
+  cc-ctl clusters get --name <cluster_name>
 
   # Delete cluster from id
-  cc clusters delete --id <cluster_id>
+  cc-ctl clusters delete --id <cluster_id>
 
   # Delete cluster from name
-  cc clusters delete --name <cluster_name>
+  cc-ctl clusters delete --name <cluster_name>
 
   # Create cluster from default configuration
-  cc clusters create --default --name <cluster_name>`,
+  cc-ctl clusters create --default --name <cluster_name>`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
