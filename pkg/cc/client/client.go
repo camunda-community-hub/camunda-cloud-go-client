@@ -347,7 +347,7 @@ func GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
 	return data, nil
 }
 
-func GetZeebeDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+func GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
 
 	data := ZeebeClientDetailsResponse{}
 
@@ -384,18 +384,18 @@ func GetZeebeDetails(clusterID string, clientID string) (ZeebeClientDetailsRespo
 	return data, nil
 }
 
-func CreateZeebeClient(clusterID string, clientName string) (string, error) {
+func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
 
 	zeebeClient := ZeebeClientCreatePayload{
 		ClientName: clientName,
 	}
 
 	if len(clusterID) == 0 {
-		return "", NewError("Cluster id should not be empty")
+		return ZeebeClientCreatedResponse{}, NewError("Cluster id should not be empty")
 	}
 
 	if len(clientName) == 0 {
-		return "", NewError("Client name should not be empty")
+		return ZeebeClientCreatedResponse{}, NewError("Client name should not be empty")
 	}
 
 	jsonStr, _ := json.Marshal(zeebeClient)
@@ -413,7 +413,7 @@ func CreateZeebeClient(clusterID string, clientName string) (string, error) {
 
 	if err != nil {
 		log.Printf("failed to create zeebe client, %v", err)
-		return "", err
+		return ZeebeClientCreatedResponse{}, err
 	}
 
 	err2 := json.Unmarshal(body, &zeebeClientCreate)
@@ -421,10 +421,10 @@ func CreateZeebeClient(clusterID string, clientName string) (string, error) {
 	if err2 != nil {
 		log.Printf("Body to unmarshal: %s", string(body))
 		log.Printf("failed to parse body for zeebe client, %v", err2)
-		return "", err2
+		return ZeebeClientCreatedResponse{}, err2
 	}
 
-	return zeebeClientCreate.ClientID, nil
+	return zeebeClientCreate, nil
 }
 
 func DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
