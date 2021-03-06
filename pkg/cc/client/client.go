@@ -18,6 +18,8 @@ var clusterCreatedResponse ClusterCreatedResponse
 
 var clusterStatusResponse ClusterStatusResponse
 
+var zeebeClientCreate ZeebeClientCreatedResponse
+
 func getDefaultClusterChannel() Channel {
 	var selectedChannel = Channel{}
 
@@ -309,4 +311,146 @@ func clusterExistsValidator(clusterName string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// GetZeebeClients - List all Zeebe clients
+func GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
+
+	data := []ZeebeClientResponse{}
+
+	if len(clusterID) == 0 {
+		return data, NewError("Cluster id should not be empty")
+	}
+
+	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", nil)
+
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Failed to get zeebe clients")
+		return data, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	err2 := json.Unmarshal(body, &data)
+
+	if err2 != nil {
+		log.Printf("Failed to unmarshal response body ->  %s", string(body))
+		return data, err2
+	}
+
+	return data, nil
+}
+
+func GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+
+	data := ZeebeClientDetailsResponse{}
+
+	if len(clusterID) == 0 {
+		return data, NewError("Cluster id should not be empty")
+	}
+
+	if len(clientID) == 0 {
+		return data, NewError("Client id should not be empty")
+	}
+
+	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
+
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Failed to get zeebe details")
+		return data, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	err2 := json.Unmarshal(body, &data)
+
+	if err2 != nil {
+		log.Printf("Failed to unmarshal response body ->  %s", string(body))
+		return data, err2
+	}
+
+	return data, nil
+}
+
+func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
+
+	zeebeClient := ZeebeClientCreatePayload{
+		ClientName: clientName,
+	}
+
+	if len(clusterID) == 0 {
+		return ZeebeClientCreatedResponse{}, NewError("Cluster id should not be empty")
+	}
+
+	if len(clientName) == 0 {
+		return ZeebeClientCreatedResponse{}, NewError("Client name should not be empty")
+	}
+
+	jsonStr, _ := json.Marshal(zeebeClient)
+
+	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Printf("failed to create zeebe client, %v", err)
+		return ZeebeClientCreatedResponse{}, err
+	}
+
+	err2 := json.Unmarshal(body, &zeebeClientCreate)
+
+	if err2 != nil {
+		log.Printf("Body to unmarshal: %s", string(body))
+		log.Printf("failed to parse body for zeebe client, %v", err2)
+		return ZeebeClientCreatedResponse{}, err2
+	}
+
+	return zeebeClientCreate, nil
+}
+
+func DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
+
+	if len(clusterID) == 0 {
+		return false, NewError("Cluster id should not be empty")
+	}
+
+	if len(clientID) == 0 {
+		return false, NewError("Cluster id should not be empty")
+	}
+
+	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Failed to delete zeebe client, %v", err)
+		return false, errors.New(fmt.Sprintf("HTTP Error trying to delete zeebe client: %d", resp.StatusCode))
+	}
+
+	if resp.StatusCode == 200 {
+		return true, nil
+	}
+	return false, errors.New(fmt.Sprintf("HTTP Error trying to delete zeebe client: %d", resp.StatusCode))
+
 }

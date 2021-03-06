@@ -117,3 +117,31 @@ type ClusterMetadata struct {
 	ResourceVersion   string `json:"resourceVersion"`
 	SelfLink          string `json:"selfLink"`
 }
+
+type ZeebeClientResponse struct {
+	ClientID    string      `json:"clientId"`
+	Created     string      `json:"created"`
+	LastUsed    interface{} `json:"lastUsed"`
+	CreatedBy   string      `json:"createdBy"`
+	UUID        string      `json:"uuid"`
+	Name        string      `json:"name"`
+	Internal    bool        `json:"internal"`
+	Permissions []string    `json:"permissions"`
+}
+
+type ZeebeClientDetailsResponse struct {
+	Name                        string `json:"name"`
+	ZEEBEADDRESS                string `json:"ZEEBE_ADDRESS"`
+	ZEEBECLIENTID               string `json:"ZEEBE_CLIENT_ID"`
+	ZEEBEAUTHORIZATIONSERVERURL string `json:"ZEEBE_AUTHORIZATION_SERVER_URL"`
+}
+
+type ZeebeClientCreatedResponse struct {
+	Name         string `json:"name"`
+	ClientID     string `json:"clientId"`
+	ClientSecret string `json:"clientSecret"`
+}
+
+type ZeebeClientCreatePayload struct {
+	ClientName string `json:"clientName"`
+}
