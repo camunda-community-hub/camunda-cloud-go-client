@@ -13,8 +13,6 @@ This repository also contains a Go Library client to consume the Camunda Cloud M
 
 [![asciicast](https://asciinema.org/a/400246.svg)](https://asciinema.org/a/400246)
 
-<script id="asciicast-400246" src="https://asciinema.org/a/400246.js" async></script>
-
 You can create a Camunda Cloud Account here: https://accounts.cloud.camunda.io/signup
   
 Then you need to go to `<YOUR USER>(Top right corner) -> Organization Settings -> Cloud Management API` 
