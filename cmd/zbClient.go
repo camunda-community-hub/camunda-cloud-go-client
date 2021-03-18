@@ -16,38 +16,77 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"github.com/spf13/cobra"
 )
 
 var (
+	cluster string
+)
+
+var (
 	zeebeClientDeleteExample = ""
-	zeebeClientGetExample    = ""
+	zeebeClientGetExample    = `
+  # List all Zeebe clients
+  cc-ctl zb-client get --cluster=<cluster_id> --all`
 	zeebeClientCreateExample = ""
 )
 
 // zbClientCmd represents the zb-client command
-var zbClientCmd = &cobra.Command{
-	Use:   "zb-client [options]",
-	Short: "Manage your zeebe clients resources on Camunda Cloud",
-	Long: `Used together [OPTIONS] like get, create, delete for manage your zeebe clients resources on Camunda Cloud. For example:` +
-		zeebeClientGetExample + zeebeClientCreateExample + zeebeClientDeleteExample,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("zb-client called")
-	},
+func CreateZbClientCmd() *cobra.Command {
+
+	zbClientCmd := &cobra.Command{
+		Use:   "zb-client [options]",
+		Short: "Manage your zeebe clients resources on Camunda Cloud",
+		Long: `Used together [OPTIONS] like get, create, delete for manage your zeebe clients resources on Camunda Cloud. For example:` +
+			zeebeClientGetExample + zeebeClientCreateExample + zeebeClientDeleteExample,
+	}
+
+	return zbClientCmd
 }
 
 func init() {
+
+	zbClientCmd := CreateZbClientCmd()
+	zbClientGetCmd := CreateZbClientGetCmd()
+
+	zbClientGetCmd.Flags().StringVarP(&cluster, "cluster", "n", "", "cc-ctl zb-client get --cluster=<cluster_id>")
+	zbClientCmd.MarkFlagRequired("cluster")
+
+	zbClientCmd.AddCommand(zbClientGetCmd)
 	rootCmd.AddCommand(zbClientCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func CreateZbClientGetCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get Zeebe clients",
+		Long:  "Used together with zb-client command, to get your zeebe clients on Camunda Cloud. For example:" + zeebeClientGetExample,
+		RunE:  ZbClientGetRunE,
+	}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// zbClientCmd.PersistentFlags().String("foo", "", "A help for foo")
+	return cmd
+}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// zbClientCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func ZbClientGetRunE(cmd *cobra.Command, args []string) error {
+
+	clients, err := client.GetZeebeClients(cluster)
+
+	if err != nil {
+		fmt.Println("err 1")
+		return err
+	}
+
+	data, err2 := json.MarshalIndent(clients, "", "  ")
+
+	if err2 != nil {
+		return err2
+	}
+
+	fmt.Println(string(data))
+
+	return nil
 }

@@ -119,14 +119,13 @@ type ClusterMetadata struct {
 }
 
 type ZeebeClientResponse struct {
-	ClientID    string      `json:"clientId"`
-	Created     string      `json:"created"`
-	LastUsed    interface{} `json:"lastUsed"`
-	CreatedBy   string      `json:"createdBy"`
-	UUID        string      `json:"uuid"`
-	Name        string      `json:"name"`
-	Internal    bool        `json:"internal"`
-	Permissions []string    `json:"permissions"`
+	ClientID    string   `json:"clientId"`
+	Created     string   `json:"created"`
+	CreatedBy   string   `json:"createdBy"`
+	UUID        string   `json:"uuid"`
+	Name        string   `json:"name"`
+	Internal    bool     `json:"internal"`
+	Permissions []string `json:"permissions"`
 }
 
 type ZeebeClientDetailsResponse struct {
