@@ -8,8 +8,8 @@ import (
 	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 )
 
-var ClientId = "GBQ1DrYzhvfCi6IB"
-var ClientSecret = "Q2NBE~HlHyO5IuiZkoBcqdlqFbxk.VLy"
+var ClientId = os.Getenv("CC_CLIENT_ID")
+var ClientSecret = os.Getenv("CC_CLIENT_SECRET")
 
 func main() {
 	login, err := client.Login(ClientId, ClientSecret)
