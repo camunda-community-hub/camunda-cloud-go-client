@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Matheus Cruz matheuscruz.dev@gmail.com
+Copyright © 2021
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"github.com/spf13/cobra"
 )
@@ -186,16 +187,16 @@ func init() {
 	rootCmd.AddCommand(clusterCmd)
 
 	// get cmd
-	getClusterCmd.Flags().BoolP("all", "a", false, "Get all clusters: camunda-cloud-go-cli get --all")
-	getClusterCmd.Flags().BoolP("params", "p", false, "Get params to create a cluster: camunda-cloud-go-cli get --params")
-	getClusterCmd.Flags().StringVarP(&name, "name", "n", "", "camunda-cloud-go-cli clusters get --name='<cluster_name>'")
+	getClusterCmd.Flags().BoolP("all", "a", false, "Get all clusters: cc-ctl get --all")
+	getClusterCmd.Flags().BoolP("params", "p", false, "Get params to create a cluster: cc-ctl get --params")
+	getClusterCmd.Flags().StringVarP(&name, "name", "n", "", "cc-ctl clusters get --name='<cluster_name>'")
 
 	// delete cmd
-	deleteClusterCmd.PersistentFlags().StringVarP(&id, "id", "i", "", "camunda-cloud-go-cli clusters delete --id=<cluster_id>")
+	deleteClusterCmd.PersistentFlags().StringVarP(&id, "id", "i", "", "cc-ctl clusters delete --id=<cluster_id>")
 	deleteClusterCmd.MarkFlagRequired("id")
 
 	// create cmd
-	createClusterCmd.Flags().BoolP("default", "d", false, "camunda-cloud-go-cli clusters create --default=(true|false)")
+	createClusterCmd.Flags().BoolP("default", "d", false, "cc-ctl clusters create --default=(true|false)")
 	createClusterCmd.Flags().StringVarP(&name, "name", "n", "", "Cluster's name")
 	createClusterCmd.Flags().StringVarP(&channel, "channel", "c", "", "Cluster's channel id")
 	createClusterCmd.Flags().StringVarP(&generation, "generation", "g", "", "Cluster's generation id")
@@ -218,3 +219,4 @@ func showParams(params client.ClusterParams) {
 	data, _ := json.MarshalIndent(params, "", "  ")
 	fmt.Println(string(data))
 }
+
