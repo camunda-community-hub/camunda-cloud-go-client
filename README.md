@@ -1,7 +1,7 @@
 <img src="https://img.shields.io/badge/Community%20Extension-An%20open%20source%20community%20maintained%20project-FF4700"> <img src="https://img.shields.io/badge/Lifecycle-Incubating-blue">
 
-# Camunda Cloud CLI and Go Client Library
-Camunda Cloud CLI to interact with Camunda Cloud Resources.
+# Camunda Cloud Console CLI and Go Client Library
+Camunda Cloud Console CLI to interact with Camunda Cloud Resources.
 
 This repository contains a CLI tool to interact with your Camunda Cloud account via the command-line. 
 
@@ -46,5 +46,5 @@ You need to export the following variables for this command to interact with a C
 This is a super simple project for you to contribute. Feel free to create issues or send PRs with improvements. 
 
 Consumers: 
-- [Zeebe Kubernetes Operator V3](https://github.com/salaboy/zeebe-operator-cc)
+- [Zeebe Kubernetes Operator CC V3](https://github.com/salaboy/zeebe-operator-cc)
 
