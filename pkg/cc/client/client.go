@@ -143,6 +143,72 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 	return clusterCreatedResponse.ClusterId, nil
 }
 
+
+func CreateClusterInRegionDefault(clusterName string, clusterRegion string) (string, error) {
+	_, existsErr := clusterExistsValidator(clusterName)
+
+	if existsErr != nil {
+		return "", existsErr
+	}
+
+	var channel = getDefaultClusterChannel()
+	var clusterPlan = getDevelopmentClusterPlan()
+	var region, err = getClusterRegionByName(clusterRegion)
+	if(err != nil){
+		return "", err
+	}
+
+	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
+		channel.Id,
+		channel.DefaultGeneration.Id,
+		region.Id,
+		clusterPlan.Id))
+
+	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+
+	//fmt.Println("Request create cluster :", req)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	defer resp.Body.Close()
+	//fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
+	//fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Printf("failed to create client, %v", err)
+		return "", err
+	}
+
+	err2 := json.Unmarshal(body, &clusterCreatedResponse)
+
+	if err2 != nil {
+		log.Printf("Body to unmarshal: %s ", string(body))
+		log.Printf("failed to parse body for create cluster, %v", err2)
+		return "", err2
+	}
+
+	return clusterCreatedResponse.ClusterId, nil
+}
+
+func getClusterRegionByName(regionName string) (Region, error) {
+	var selectedRegion = Region{}
+	for _, r := range clusterParams.Regions {
+		if r.Name == regionName {
+			selectedRegion = r
+		}
+
+	}
+	if(selectedRegion.Name == ""){
+		return Region{}, errors.New("No Region Found with name: " + regionName)
+	}
+	return selectedRegion, nil
+
+}
+
 func CreateClusterDefault(clusterName string) (string, error) {
 
 	_, existsErr := clusterExistsValidator(clusterName)
