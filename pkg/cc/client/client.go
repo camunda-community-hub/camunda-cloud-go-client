@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var authResponsePayload AuthResponsePayload
@@ -29,6 +30,30 @@ func getDefaultClusterChannel() Channel {
 		}
 	}
 	return selectedChannel
+}
+
+func getClusterChannelByGenerationName(generationName string) Channel {
+	var selectedChannel = Channel{}
+
+	for _, c := range clusterParams.Channels {
+		if strings.Contains(c.Name, generationName) {
+			selectedChannel = c
+		}
+	}
+	return selectedChannel
+}
+
+
+
+func getClusterPlanByName(clusterPlanName string) ClusterPlantType {
+	var developmentClusterPlanType = ClusterPlantType{}
+	for _, cp := range clusterParams.ClusterPlanTypes {
+		if cp.Name == clusterPlanName {
+			developmentClusterPlanType = cp
+		}
+	}
+
+	return developmentClusterPlanType
 }
 
 func getDevelopmentClusterPlan() ClusterPlantType {
@@ -144,18 +169,32 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 }
 
 
-func CreateClusterInRegionDefault(clusterName string, clusterRegion string) (string, error) {
+func CreateClusterWithParams(clusterName string, clusterRegion string, generationName string, clusterPlanName string) (string, error) {
 	_, existsErr := clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
 		return "", existsErr
 	}
 
-	var channel = getDefaultClusterChannel()
-	var clusterPlan = getDevelopmentClusterPlan()
-	var region, err = getClusterRegionByName(clusterRegion)
-	if(err != nil){
-		return "", err
+	var channel = Channel{}
+	var clusterPlan = ClusterPlantType{}
+	var region = Region{}
+	if clusterRegion != "" {
+		region, _ = getClusterRegionByName(clusterRegion)
+	}else{
+		region = getDefaultRegion()
+	}
+
+	if generationName != ""{
+		channel = getClusterChannelByGenerationName(generationName)
+	}else{
+		channel = getDefaultClusterChannel()
+	}
+
+	if clusterPlanName != ""{
+		clusterPlan = getClusterPlanByName(clusterPlanName)
+	}else{
+		clusterPlan = getDevelopmentClusterPlan()
 	}
 
 	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
