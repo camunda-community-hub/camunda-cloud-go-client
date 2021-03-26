@@ -32,11 +32,11 @@ func getDefaultClusterChannel() Channel {
 	return selectedChannel
 }
 
-func getClusterChannelByGenerationName(generationName string) Channel {
+func getClusterChannelByName(channelName string) Channel {
 	var selectedChannel = Channel{}
 
 	for _, c := range clusterParams.Channels {
-		if strings.Contains(c.Name, generationName) {
+		if strings.Contains(c.Name, channelName) {
 			selectedChannel = c
 		}
 	}
@@ -169,7 +169,7 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 }
 
 
-func CreateClusterWithParams(clusterName string, clusterRegion string, generationName string, clusterPlanName string) (string, error) {
+func CreateClusterWithParams(clusterName string, clusterRegion string, channelName string, clusterPlanName string) (string, error) {
 	_, existsErr := clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
@@ -185,8 +185,8 @@ func CreateClusterWithParams(clusterName string, clusterRegion string, generatio
 		region = getDefaultRegion()
 	}
 
-	if generationName != ""{
-		channel = getClusterChannelByGenerationName(generationName)
+	if channelName != ""{
+		channel = getClusterChannelByName(channelName)
 	}else{
 		channel = getDefaultClusterChannel()
 	}
