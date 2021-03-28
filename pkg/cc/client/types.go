@@ -100,6 +100,7 @@ type Cluster struct {
 	Created         string          `json:"created"`
 	K8sContext      K8sContext      `json:"k8sContext"`
 	ClusterMetadata ClusterMetadata `json:"metadata"`
+	ClusterPlantType ClusterPlantType `json:"planType"`
 }
 
 type K8sContext struct {

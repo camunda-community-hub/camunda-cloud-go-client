@@ -169,7 +169,7 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 }
 
 
-func CreateClusterWithParams(clusterName string, clusterRegion string, channelName string, clusterPlanName string) (string, error) {
+func CreateClusterWithParams(clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
 	_, existsErr := clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
@@ -179,6 +179,8 @@ func CreateClusterWithParams(clusterName string, clusterRegion string, channelNa
 	var channel = Channel{}
 	var clusterPlan = ClusterPlantType{}
 	var region = Region{}
+	var generation = Generation{}
+
 	if clusterRegion != "" {
 		region, _ = getClusterRegionByName(clusterRegion)
 	}else{
@@ -191,6 +193,12 @@ func CreateClusterWithParams(clusterName string, clusterRegion string, channelNa
 		channel = getDefaultClusterChannel()
 	}
 
+	if generationName != ""{
+		generation = getGenerationByNameForSelectedChannel(channel, clusterPlanName)
+	}else{
+		generation = channel.DefaultGeneration
+	}
+
 	if clusterPlanName != ""{
 		clusterPlan = getClusterPlanByName(clusterPlanName)
 	}else{
@@ -199,7 +207,7 @@ func CreateClusterWithParams(clusterName string, clusterRegion string, channelNa
 
 	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
 		channel.Id,
-		channel.DefaultGeneration.Id,
+		generation.Id,
 		region.Id,
 		clusterPlan.Id))
 
@@ -231,6 +239,16 @@ func CreateClusterWithParams(clusterName string, clusterRegion string, channelNa
 	}
 
 	return clusterCreatedResponse.ClusterId, nil
+}
+
+func getGenerationByNameForSelectedChannel(channel Channel, generationName string) Generation {
+	var generataion = Generation{}
+	for _, ag := range channel.AllowedGeneration {
+		if ag.Name == generationName {
+			generataion = ag
+		}
+	}
+	return generataion
 }
 
 func getClusterRegionByName(regionName string) (Region, error) {
@@ -372,7 +390,6 @@ func GetClusters() ([]Cluster, error) {
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	err2 := json.Unmarshal(body, &data)
 
 	if err2 != nil {
