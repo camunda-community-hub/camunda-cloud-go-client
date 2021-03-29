@@ -122,7 +122,7 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	//fmt.Println("response Body cluster params :", string(body))
 	err2 := json.Unmarshal(body, &clusterStatusResponse)
 	if err2 != nil {
-		log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
+		//log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
 		clusterStatus.Ready = "Not Found"
 		return clusterStatus, nil
 	}
