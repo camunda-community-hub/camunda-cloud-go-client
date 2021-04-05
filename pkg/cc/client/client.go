@@ -11,33 +11,37 @@ import (
 	"strings"
 )
 
-var authResponsePayload AuthResponsePayload
 
-var clusterParams ClusterParams
 
-var clusterCreatedResponse ClusterCreatedResponse
+type CCClient struct {
+	AuthResponsePayload AuthResponsePayload
 
-var clusterStatusResponse ClusterStatusResponse
+	ClusterParams ClusterParams
 
-var zeebeClientCreate ZeebeClientCreatedResponse
+	ClusterCreatedResponse ClusterCreatedResponse
 
-func getDefaultClusterChannel() Channel {
+	ClusterStatusResponse ClusterStatusResponse
+
+	ZeebeClientCreate ZeebeClientCreatedResponse
+}
+
+func (c* CCClient) getDefaultClusterChannel() Channel {
 	var selectedChannel = Channel{}
 
-	for _, c := range clusterParams.Channels {
-		if c.IsDefault {
-			selectedChannel = c
+	for _, channel := range c.ClusterParams.Channels {
+		if channel.IsDefault {
+			selectedChannel = channel
 		}
 	}
 	return selectedChannel
 }
 
-func getClusterChannelByName(channelName string) Channel {
+func (c* CCClient) getClusterChannelByName(channelName string) Channel {
 	var selectedChannel = Channel{}
 
-	for _, c := range clusterParams.Channels {
-		if strings.Contains(c.Name, channelName) {
-			selectedChannel = c
+	for _, channel := range c.ClusterParams.Channels {
+		if strings.Contains(channel.Name, channelName) {
+			selectedChannel = channel
 		}
 	}
 	return selectedChannel
@@ -45,9 +49,9 @@ func getClusterChannelByName(channelName string) Channel {
 
 
 
-func getClusterPlanByName(clusterPlanName string) ClusterPlantType {
+func (c* CCClient) getClusterPlanByName(clusterPlanName string) ClusterPlantType {
 	var developmentClusterPlanType = ClusterPlantType{}
-	for _, cp := range clusterParams.ClusterPlanTypes {
+	for _, cp := range c.ClusterParams.ClusterPlanTypes {
 		if cp.Name == clusterPlanName {
 			developmentClusterPlanType = cp
 		}
@@ -56,9 +60,9 @@ func getClusterPlanByName(clusterPlanName string) ClusterPlantType {
 	return developmentClusterPlanType
 }
 
-func getDevelopmentClusterPlan() ClusterPlantType {
+func (c* CCClient) getDevelopmentClusterPlan() ClusterPlantType {
 	var developmentClusterPlanType = ClusterPlantType{}
-	for _, cp := range clusterParams.ClusterPlanTypes {
+	for _, cp := range c.ClusterParams.ClusterPlanTypes {
 		if cp.Name == "Development" {
 			developmentClusterPlanType = cp
 		}
@@ -67,9 +71,9 @@ func getDevelopmentClusterPlan() ClusterPlantType {
 	return developmentClusterPlanType
 }
 
-func getDefaultRegion() Region {
+func (c* CCClient) getDefaultRegion() Region {
 	var defaultRegion = Region{}
-	for _, r := range clusterParams.Regions {
+	for _, r := range c.ClusterParams.Regions {
 		if r.Name == "Europe West 1D" {
 			defaultRegion = r
 		}
@@ -78,34 +82,34 @@ func getDefaultRegion() Region {
 	return defaultRegion
 }
 
-func GetClusterParams() (*ClusterParams, error) {
+func (c* CCClient) GetClusterParams() (*ClusterParams, error) {
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/parameters", nil)
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	if err != nil {
 		log.Printf("failed to create client cluster params, %v", err)
-		return &clusterParams, err
+		return &c.ClusterParams, err
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	err2 := json.Unmarshal(body, &clusterParams)
+	err2 := json.Unmarshal(body, &c.ClusterParams)
 
 	if err2 != nil {
 		log.Printf("failed to parse body cluster params, %v, %s", err2, string(body))
-		return &clusterParams, err2
+		return &c.ClusterParams, err2
 	}
 
-	return &clusterParams, nil
+	return &c.ClusterParams, nil
 }
 
-func GetClusterDetails(clusterId string) (ClusterStatus, error) {
+func (c* CCClient) GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	var clusterStatus = ClusterStatus{}
 	client := &http.Client{}
@@ -120,20 +124,20 @@ func GetClusterDetails(clusterId string) (ClusterStatus, error) {
 	//fmt.Println("response Headers cluster params:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Println("response Body cluster params :", string(body))
-	err2 := json.Unmarshal(body, &clusterStatusResponse)
+	err2 := json.Unmarshal(body, &c.ClusterStatusResponse)
 	if err2 != nil {
 		//log.Printf("failed to parse body cluster details, %v,  %s", err2, string(body))
 		clusterStatus.Ready = "Not Found"
 		return clusterStatus, nil
 	}
-	clusterStatus = clusterStatusResponse.ClusterStatus
+	clusterStatus = c.ClusterStatusResponse.ClusterStatus
 	return clusterStatus, nil
 
 }
 
-func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, error) {
+func (c* CCClient) CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, error) {
 
-	_, existsErr := clusterExistsValidator(clusterParams.ClusterName)
+	_, existsErr := c.clusterExistsValidator(clusterParams.ClusterName)
 
 	if existsErr != nil {
 		return "", existsErr
@@ -143,7 +147,7 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 
 	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -157,7 +161,7 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 		return "", err
 	}
 
-	err2 := json.Unmarshal(body, &clusterCreatedResponse)
+	err2 := json.Unmarshal(body, &c.ClusterCreatedResponse)
 
 	if err2 != nil {
 		log.Printf("Body to unmarshal: %s", string(body))
@@ -165,12 +169,12 @@ func CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, err
 		return "", err2
 	}
 
-	return clusterCreatedResponse.ClusterId, nil
+	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
 
-func CreateClusterWithParams(clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
-	_, existsErr := clusterExistsValidator(clusterName)
+func (c* CCClient) CreateClusterWithParams(clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
+	_, existsErr := c.clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
 		return "", existsErr
@@ -182,27 +186,27 @@ func CreateClusterWithParams(clusterName string, clusterPlanName string, channel
 	var generation = Generation{}
 
 	if clusterRegion != "" {
-		region, _ = getClusterRegionByName(clusterRegion)
+		region, _ = c.getClusterRegionByName(clusterRegion)
 	}else{
-		region = getDefaultRegion()
+		region = c.getDefaultRegion()
 	}
 
 	if channelName != ""{
-		channel = getClusterChannelByName(channelName)
+		channel = c.getClusterChannelByName(channelName)
 	}else{
-		channel = getDefaultClusterChannel()
+		channel = c.getDefaultClusterChannel()
 	}
 
 	if generationName != ""{
-		generation = getGenerationByNameForSelectedChannel(channel, clusterPlanName)
+		generation = c.getGenerationByNameForSelectedChannel(channel, clusterPlanName)
 	}else{
 		generation = channel.DefaultGeneration
 	}
 
 	if clusterPlanName != ""{
-		clusterPlan = getClusterPlanByName(clusterPlanName)
+		clusterPlan = c.getClusterPlanByName(clusterPlanName)
 	}else{
-		clusterPlan = getDevelopmentClusterPlan()
+		clusterPlan = c.getDevelopmentClusterPlan()
 	}
 
 	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
@@ -213,7 +217,7 @@ func CreateClusterWithParams(clusterName string, clusterPlanName string, channel
 
 	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	//fmt.Println("Request create cluster :", req)
 
@@ -230,7 +234,7 @@ func CreateClusterWithParams(clusterName string, clusterPlanName string, channel
 		return "", err
 	}
 
-	err2 := json.Unmarshal(body, &clusterCreatedResponse)
+	err2 := json.Unmarshal(body, &c.ClusterCreatedResponse)
 
 	if err2 != nil {
 		log.Printf("Body to unmarshal: %s ", string(body))
@@ -238,10 +242,10 @@ func CreateClusterWithParams(clusterName string, clusterPlanName string, channel
 		return "", err2
 	}
 
-	return clusterCreatedResponse.ClusterId, nil
+	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
-func getGenerationByNameForSelectedChannel(channel Channel, generationName string) Generation {
+func (c* CCClient) getGenerationByNameForSelectedChannel(channel Channel, generationName string) Generation {
 	var generataion = Generation{}
 	for _, ag := range channel.AllowedGeneration {
 		if ag.Name == generationName {
@@ -251,9 +255,9 @@ func getGenerationByNameForSelectedChannel(channel Channel, generationName strin
 	return generataion
 }
 
-func getClusterRegionByName(regionName string) (Region, error) {
+func (c* CCClient) getClusterRegionByName(regionName string) (Region, error) {
 	var selectedRegion = Region{}
-	for _, r := range clusterParams.Regions {
+	for _, r := range c.ClusterParams.Regions {
 		if r.Name == regionName {
 			selectedRegion = r
 		}
@@ -266,17 +270,17 @@ func getClusterRegionByName(regionName string) (Region, error) {
 
 }
 
-func CreateClusterDefault(clusterName string) (string, error) {
+func (c* CCClient) CreateClusterDefault(clusterName string) (string, error) {
 
-	_, existsErr := clusterExistsValidator(clusterName)
+	_, existsErr := c.clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
 		return "", existsErr
 	}
 
-	var channel = getDefaultClusterChannel()
-	var clusterPlan = getDevelopmentClusterPlan()
-	var region = getDefaultRegion()
+	var channel = c.getDefaultClusterChannel()
+	var clusterPlan = c.getDevelopmentClusterPlan()
+	var region = c.getDefaultRegion()
 	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
 		channel.Id,
 		channel.DefaultGeneration.Id,
@@ -285,7 +289,7 @@ func CreateClusterDefault(clusterName string) (string, error) {
 
 	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	//fmt.Println("Request create cluster :", req)
 
@@ -302,7 +306,7 @@ func CreateClusterDefault(clusterName string) (string, error) {
 		return "", err
 	}
 
-	err2 := json.Unmarshal(body, &clusterCreatedResponse)
+	err2 := json.Unmarshal(body, &c.ClusterCreatedResponse)
 
 	if err2 != nil {
 		log.Printf("Body to unmarshal: %s ", string(body))
@@ -310,10 +314,10 @@ func CreateClusterDefault(clusterName string) (string, error) {
 		return "", err2
 	}
 
-	return clusterCreatedResponse.ClusterId, nil
+	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
-func Login(clientId string, clientSecret string) (bool, error) {
+func (c* CCClient) Login(clientId string, clientSecret string) (bool, error) {
 
 	jsonStr, _ := json.Marshal(NewAuthRequestPayload(clientId, clientSecret))
 
@@ -334,7 +338,7 @@ func Login(clientId string, clientSecret string) (bool, error) {
 	//fmt.Println("response Status:", resp.Status)
 	//fmt.Println("response Body:", string(body))
 	if resp.StatusCode == 200 {
-		err2 := json.Unmarshal(body, &authResponsePayload)
+		err2 := json.Unmarshal(body, &c.AuthResponsePayload)
 		//		log.Printf("json from login parsed!")
 		if err2 != nil {
 			log.Printf("failed to parse body for login, %v, %s", err2, string(body))
@@ -347,9 +351,9 @@ func Login(clientId string, clientSecret string) (bool, error) {
 	}
 }
 
-func DeleteCluster(clusterId string) (bool, error) {
+func (c* CCClient) DeleteCluster(clusterId string) (bool, error) {
 	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -372,13 +376,13 @@ func DeleteCluster(clusterId string) (bool, error) {
 }
 
 // GetClusters from Camunda Cloud
-func GetClusters() ([]Cluster, error) {
+func (c* CCClient) GetClusters() ([]Cluster, error) {
 
 	data := []Cluster{}
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters", nil)
 
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 
@@ -400,11 +404,11 @@ func GetClusters() ([]Cluster, error) {
 	return data, nil
 }
 
-func GetClusterByName(name string) (Cluster, error) {
+func (c* CCClient) GetClusterByName(name string) (Cluster, error) {
 
 	data := Cluster{}
 
-	clusters, err := GetClusters()
+	clusters, err := c.GetClusters()
 
 	if err != nil {
 		return data, err
@@ -420,9 +424,9 @@ func GetClusterByName(name string) (Cluster, error) {
 	return data, nil
 }
 
-func clusterExistsValidator(clusterName string) (string, error) {
+func (c* CCClient) clusterExistsValidator(clusterName string) (string, error) {
 
-	cluster, err := GetClusterByName(clusterName)
+	cluster, err := c.GetClusterByName(clusterName)
 
 	if err != nil {
 		return "", err
@@ -436,7 +440,7 @@ func clusterExistsValidator(clusterName string) (string, error) {
 }
 
 // GetZeebeClients - List all Zeebe clients
-func GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
+func (c* CCClient) GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
 
 	data := []ZeebeClientResponse{}
 
@@ -446,7 +450,7 @@ func GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", nil)
 
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 
@@ -469,7 +473,7 @@ func GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
 	return data, nil
 }
 
-func GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+func (c* CCClient) GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
 
 	data := ZeebeClientDetailsResponse{}
 
@@ -483,7 +487,7 @@ func GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetail
 
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
 
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 
@@ -506,7 +510,7 @@ func GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetail
 	return data, nil
 }
 
-func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
+func (c* CCClient) CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
 
 	zeebeClient := ZeebeClientCreatePayload{
 		ClientName: clientName,
@@ -524,7 +528,7 @@ func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedR
 
 	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -538,7 +542,7 @@ func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedR
 		return ZeebeClientCreatedResponse{}, err
 	}
 
-	err2 := json.Unmarshal(body, &zeebeClientCreate)
+	err2 := json.Unmarshal(body, &c.ZeebeClientCreate)
 
 	if err2 != nil {
 		log.Printf("Body to unmarshal: %s", string(body))
@@ -546,10 +550,10 @@ func CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedR
 		return ZeebeClientCreatedResponse{}, err2
 	}
 
-	return zeebeClientCreate, nil
+	return c.ZeebeClientCreate, nil
 }
 
-func DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
+func (c* CCClient) DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
 
 	if len(clusterID) == 0 {
 		return false, NewError("Cluster id should not be empty")
@@ -560,7 +564,7 @@ func DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
 	}
 
 	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
-	req.Header.Set("Authorization", "Bearer "+authResponsePayload.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

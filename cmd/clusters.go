@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
+	cc "github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"github.com/spf13/cobra"
 )
 
@@ -135,7 +135,7 @@ var createClusterCmd = &cobra.Command{
 		def, _ := cmd.Flags().GetBool("default")
 
 		if !def {
-			clusterID, err := client.CreateClusterCustomConfig(client.NewClusterCreationParams(
+			clusterID, err := client.CreateClusterCustomConfig(cc.NewClusterCreationParams(
 				name, channel, generation, region, plan,
 			))
 
@@ -205,17 +205,17 @@ func init() {
 	createClusterCmd.MarkFlagRequired("name")
 }
 
-func showCluster(cluster client.Cluster) {
+func showCluster(cluster cc.Cluster) {
 	data, _ := json.MarshalIndent(cluster, "", "  ")
 	fmt.Println(string(data))
 }
 
-func showClusters(clusters []client.Cluster) {
+func showClusters(clusters []cc.Cluster) {
 	data, _ := json.MarshalIndent(clusters, "", "  ")
 	fmt.Println(string(data))
 }
 
-func showParams(params client.ClusterParams) {
+func showParams(params cc.ClusterParams) {
 	data, _ := json.MarshalIndent(params, "", "  ")
 	fmt.Println(string(data))
 }

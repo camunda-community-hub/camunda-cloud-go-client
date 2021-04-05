@@ -18,8 +18,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"github.com/spf13/cobra"
 )
 
