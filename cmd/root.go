@@ -17,8 +17,9 @@ package cmd
 
 import (
 	"fmt"
-	cc "github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 	"os"
+
+	cc "github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 
 	"github.com/spf13/cobra"
 
@@ -31,7 +32,6 @@ var client cc.CCClient
 
 var ClientId = os.Getenv("CC_CLIENT_ID")
 var ClientSecret = os.Getenv("CC_CLIENT_SECRET")
-
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -69,7 +69,10 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-
+	if ClientId == "" || ClientSecret == "" {
+		fmt.Println(rootCmd.Long)
+		os.Exit(1)
+	}
 	login, err := client.Login(ClientId, ClientSecret)
 
 	if err != nil || !login {
