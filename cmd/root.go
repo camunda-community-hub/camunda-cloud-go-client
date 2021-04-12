@@ -70,6 +70,9 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 
+	flush := client.InitTracer()
+	defer flush()
+
 	login, err := client.Login(ClientId, ClientSecret)
 
 	if err != nil || !login {
