@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -51,6 +52,7 @@ func (c* CCClient) InitTracer() func() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	c.tr = otel.Tracer("cc-ctl")
 	return flush
 }
 
