@@ -66,13 +66,24 @@ var rootCmd = &cobra.Command{
   cc-ctl clusters create --default --name <cluster_name>`,
 }
 
+// checkEnvVars makes sure that ClientId and ClientSecret are not null
+// before calling client.Login(ClientId, ClientSecret)
+func checkEnvVars(id string, secret string) bool {
+	var envVarsExist bool = true
+	if id == "" || secret == "" {
+		envVarsExist = false
+	}
+	return envVarsExist
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if ClientId == "" || ClientSecret == "" {
+	if envVarsExist := checkEnvVars(ClientId, ClientSecret); !envVarsExist {
 		fmt.Println(rootCmd.Long)
 		os.Exit(1)
 	}
+
 	login, err := client.Login(ClientId, ClientSecret)
 
 	if err != nil || !login {
