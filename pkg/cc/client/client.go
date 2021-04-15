@@ -2,16 +2,22 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/trace/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/semconv"
+	"go.opentelemetry.io/otel/trace"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 )
-
-
 
 type CCClient struct {
 	AuthResponsePayload AuthResponsePayload
@@ -23,9 +29,32 @@ type CCClient struct {
 	ClusterStatusResponse ClusterStatusResponse
 
 	ZeebeClientCreate ZeebeClientCreatedResponse
+
+	tracer trace.Tracer
 }
 
-func (c* CCClient) getDefaultClusterChannel() Channel {
+func (c *CCClient) InitTracer() func() {
+
+	// Create and install Jaeger export pipeline.
+	flush, err := jaeger.InstallNewPipeline(
+		jaeger.WithCollectorEndpoint("http://localhost:14268/api/traces"),
+		jaeger.WithSDKOptions(
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			sdktrace.WithResource(resource.NewWithAttributes(
+				semconv.ServiceNameKey.String("cc-ctl"),
+				attribute.String("exporter", "jaeger"),
+				attribute.Float64("float", 312.23),
+			)),
+		),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.tracer = otel.Tracer("cc-ctl")
+	return flush
+}
+
+func (c *CCClient) getDefaultClusterChannel() Channel {
 	var selectedChannel = Channel{}
 
 	for _, channel := range c.ClusterParams.Channels {
@@ -36,7 +65,7 @@ func (c* CCClient) getDefaultClusterChannel() Channel {
 	return selectedChannel
 }
 
-func (c* CCClient) getClusterChannelByName(channelName string) Channel {
+func (c *CCClient) getClusterChannelByName(channelName string) Channel {
 	var selectedChannel = Channel{}
 
 	for _, channel := range c.ClusterParams.Channels {
@@ -47,9 +76,7 @@ func (c* CCClient) getClusterChannelByName(channelName string) Channel {
 	return selectedChannel
 }
 
-
-
-func (c* CCClient) getClusterPlanByName(clusterPlanName string) ClusterPlantType {
+func (c *CCClient) getClusterPlanByName(clusterPlanName string) ClusterPlantType {
 	var developmentClusterPlanType = ClusterPlantType{}
 	for _, cp := range c.ClusterParams.ClusterPlanTypes {
 		if cp.Name == clusterPlanName {
@@ -60,7 +87,7 @@ func (c* CCClient) getClusterPlanByName(clusterPlanName string) ClusterPlantType
 	return developmentClusterPlanType
 }
 
-func (c* CCClient) getDevelopmentClusterPlan() ClusterPlantType {
+func (c *CCClient) getDevelopmentClusterPlan() ClusterPlantType {
 	var developmentClusterPlanType = ClusterPlantType{}
 	for _, cp := range c.ClusterParams.ClusterPlanTypes {
 		if cp.Name == "Development" {
@@ -71,7 +98,7 @@ func (c* CCClient) getDevelopmentClusterPlan() ClusterPlantType {
 	return developmentClusterPlanType
 }
 
-func (c* CCClient) getDefaultRegion() Region {
+func (c *CCClient) getDefaultRegion() Region {
 	var defaultRegion = Region{}
 	for _, r := range c.ClusterParams.Regions {
 		if r.Name == "Europe West 1D" {
@@ -82,8 +109,15 @@ func (c* CCClient) getDefaultRegion() Region {
 	return defaultRegion
 }
 
-func (c* CCClient) GetClusterParams() (*ClusterParams, error) {
+func (c *CCClient) GetClusterParams() (*ClusterParams, error) {
+	ctx := context.Background()
+	return c.GetClusterParamsWithContext(ctx)
+}
 
+func (c *CCClient) GetClusterParamsWithContext(ctx context.Context) (*ClusterParams, error) {
+
+	ctx, span := c.tracer.Start(ctx, "getClusterParams")
+	defer span.End()
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/parameters", nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -106,8 +140,14 @@ func (c* CCClient) GetClusterParams() (*ClusterParams, error) {
 
 	return &c.ClusterParams, nil
 }
+func (c *CCClient) GetClusterDetails(clusterId string) (ClusterStatus, error) {
+	ctx := context.Background()
+	return c.GetClusterDetailsWithContext(ctx, clusterId)
+}
 
-func (c* CCClient) GetClusterDetails(clusterId string) (ClusterStatus, error) {
+func (c *CCClient) GetClusterDetailsWithContext(ctx context.Context, clusterId string) (ClusterStatus, error) {
+	ctx, span := c.tracer.Start(ctx, "getClusterDetails")
+	defer span.End()
 	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -135,7 +175,17 @@ func (c* CCClient) GetClusterDetails(clusterId string) (ClusterStatus, error) {
 
 }
 
-func (c* CCClient) CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, error) {
+
+func (c *CCClient) CreateClusterCustomConfig(clusterParams ClusterCreationParams) (string, error) {
+	ctx := context.Background()
+	return c.CreateClusterCustomConfigWithContext(ctx, clusterParams)
+}
+
+func (c *CCClient) CreateClusterCustomConfigWithContext(ctx context.Context, clusterParams ClusterCreationParams) (string, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "createClusterCustomConfig")
+	defer span.End()
 
 	_, existsErr := c.clusterExistsValidator(clusterParams.ClusterName)
 
@@ -172,8 +222,15 @@ func (c* CCClient) CreateClusterCustomConfig(clusterParams ClusterCreationParams
 	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
+func (c *CCClient) CreateClusterWithParams(clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
+	ctx := context.Background()
+	return c.CreateClusterWithParamsAndContext(ctx, clusterName, clusterPlanName, channelName, generationName, clusterRegion)
+}
 
-func (c* CCClient) CreateClusterWithParams(clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
+func (c *CCClient) CreateClusterWithParamsAndContext(ctx context.Context, clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
+
+	ctx, span := c.tracer.Start(ctx, "createClusterWithParams")
+	defer span.End()
 	_, existsErr := c.clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
@@ -187,25 +244,25 @@ func (c* CCClient) CreateClusterWithParams(clusterName string, clusterPlanName s
 
 	if clusterRegion != "" {
 		region, _ = c.getClusterRegionByName(clusterRegion)
-	}else{
+	} else {
 		region = c.getDefaultRegion()
 	}
 
-	if channelName != ""{
+	if channelName != "" {
 		channel = c.getClusterChannelByName(channelName)
-	}else{
+	} else {
 		channel = c.getDefaultClusterChannel()
 	}
 
-	if generationName != ""{
+	if generationName != "" {
 		generation = c.getGenerationByNameForSelectedChannel(channel, clusterPlanName)
-	}else{
+	} else {
 		generation = channel.DefaultGeneration
 	}
 
-	if clusterPlanName != ""{
+	if clusterPlanName != "" {
 		clusterPlan = c.getClusterPlanByName(clusterPlanName)
-	}else{
+	} else {
 		clusterPlan = c.getDevelopmentClusterPlan()
 	}
 
@@ -245,7 +302,7 @@ func (c* CCClient) CreateClusterWithParams(clusterName string, clusterPlanName s
 	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
-func (c* CCClient) getGenerationByNameForSelectedChannel(channel Channel, generationName string) Generation {
+func (c *CCClient) getGenerationByNameForSelectedChannel(channel Channel, generationName string) Generation {
 	var generataion = Generation{}
 	for _, ag := range channel.AllowedGeneration {
 		if ag.Name == generationName {
@@ -255,7 +312,7 @@ func (c* CCClient) getGenerationByNameForSelectedChannel(channel Channel, genera
 	return generataion
 }
 
-func (c* CCClient) getClusterRegionByName(regionName string) (Region, error) {
+func (c *CCClient) getClusterRegionByName(regionName string) (Region, error) {
 	var selectedRegion = Region{}
 	for _, r := range c.ClusterParams.Regions {
 		if r.Name == regionName {
@@ -263,14 +320,22 @@ func (c* CCClient) getClusterRegionByName(regionName string) (Region, error) {
 		}
 
 	}
-	if(selectedRegion.Name == ""){
+	if selectedRegion.Name == "" {
 		return Region{}, errors.New("No Region Found with name: " + regionName)
 	}
 	return selectedRegion, nil
 
 }
 
-func (c* CCClient) CreateClusterDefault(clusterName string) (string, error) {
+func (c *CCClient) CreateClusterDefault(clusterName string) (string, error) {
+	ctx := context.Background()
+	return c.CreateClusterDefaultWithContext(ctx, clusterName)
+}
+
+func (c *CCClient) CreateClusterDefaultWithContext(ctx context.Context, clusterName string) (string, error) {
+
+	ctx, span := c.tracer.Start(ctx, "createClusterDefault")
+	defer span.End()
 
 	_, existsErr := c.clusterExistsValidator(clusterName)
 
@@ -317,7 +382,15 @@ func (c* CCClient) CreateClusterDefault(clusterName string) (string, error) {
 	return c.ClusterCreatedResponse.ClusterId, nil
 }
 
-func (c* CCClient) Login(clientId string, clientSecret string) (bool, error) {
+func (c *CCClient) Login(clientId string, clientSecret string) (bool, error) {
+	ctx := context.Background()
+	return c.LoginWithContext(ctx, clientId, clientSecret)
+}
+
+func (c *CCClient) LoginWithContext(ctx context.Context, clientId string, clientSecret string) (bool, error) {
+
+	ctx, span := c.tracer.Start(ctx, "login")
+	defer span.End()
 
 	jsonStr, _ := json.Marshal(NewAuthRequestPayload(clientId, clientSecret))
 
@@ -351,7 +424,17 @@ func (c* CCClient) Login(clientId string, clientSecret string) (bool, error) {
 	}
 }
 
-func (c* CCClient) DeleteCluster(clusterId string) (bool, error) {
+func (c *CCClient) DeleteCluster(clusterId string) (bool, error) {
+	ctx := context.Background()
+	return c.DeleteClusterWithContext(ctx, clusterId)
+}
+
+func (c *CCClient) DeleteClusterWithContext(ctx context.Context, clusterId string) (bool, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "deleteCluster")
+	defer span.End()
+
 	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -375,8 +458,18 @@ func (c* CCClient) DeleteCluster(clusterId string) (bool, error) {
 
 }
 
+
+func (c *CCClient) GetClusters() ([]Cluster, error) {
+	ctx := context.Background()
+	return c.GetClustersWithContext(ctx)
+}
+
 // GetClusters from Camunda Cloud
-func (c* CCClient) GetClusters() ([]Cluster, error) {
+func (c *CCClient) GetClustersWithContext(ctx context.Context) ( []Cluster, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "getClusters")
+	defer span.End()
 
 	data := []Cluster{}
 
@@ -404,7 +497,17 @@ func (c* CCClient) GetClusters() ([]Cluster, error) {
 	return data, nil
 }
 
-func (c* CCClient) GetClusterByName(name string) (Cluster, error) {
+
+func (c *CCClient) GetClusterByName(name string) (Cluster, error) {
+	ctx := context.Background()
+	return c.GetClusterByNameWithContext(ctx, name)
+}
+
+func (c *CCClient) GetClusterByNameWithContext(ctx context.Context, name string) (Cluster, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "getClusterByName")
+	defer span.End()
 
 	data := Cluster{}
 
@@ -424,7 +527,16 @@ func (c* CCClient) GetClusterByName(name string) (Cluster, error) {
 	return data, nil
 }
 
-func (c* CCClient) clusterExistsValidator(clusterName string) (string, error) {
+func (c *CCClient) clusterExistsValidator(clusterName string) (string, error) {
+	ctx := context.Background()
+	return c.clusterExistsValidatorWithContext(ctx, clusterName)
+}
+
+func (c *CCClient) clusterExistsValidatorWithContext(ctx context.Context, clusterName string) (string, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "clusterExistsValidator")
+	defer span.End()
 
 	cluster, err := c.GetClusterByName(clusterName)
 
@@ -439,8 +551,16 @@ func (c* CCClient) clusterExistsValidator(clusterName string) (string, error) {
 	return "", nil
 }
 
+func (c *CCClient) GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
+	ctx := context.Background()
+	return c.GetZeebeClientsWithContext(ctx, clusterID)
+}
 // GetZeebeClients - List all Zeebe clients
-func (c* CCClient) GetZeebeClients(clusterID string) ([]ZeebeClientResponse, error) {
+func (c *CCClient) GetZeebeClientsWithContext(ctx context.Context, clusterID string) ([]ZeebeClientResponse, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "getZeebeClients")
+	defer span.End()
 
 	data := []ZeebeClientResponse{}
 
@@ -473,7 +593,16 @@ func (c* CCClient) GetZeebeClients(clusterID string) ([]ZeebeClientResponse, err
 	return data, nil
 }
 
-func (c* CCClient) GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+func (c *CCClient) GetZeebeClientDetails(clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+	ctx := context.Background()
+	return c.GetZeebeClientDetailsWithContext(ctx, clusterID, clientID)
+}
+
+func (c *CCClient) GetZeebeClientDetailsWithContext(ctx context.Context, clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "getZeebeClientDetails")
+	defer span.End()
 
 	data := ZeebeClientDetailsResponse{}
 
@@ -510,7 +639,16 @@ func (c* CCClient) GetZeebeClientDetails(clusterID string, clientID string) (Zee
 	return data, nil
 }
 
-func (c* CCClient) CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
+func (c *CCClient) CreateZeebeClient(clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
+	ctx := context.Background()
+	return c.CreateZeebeClientWithContext(ctx, clusterID, clientName)
+}
+
+func (c *CCClient) CreateZeebeClientWithContext(ctx context.Context, clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "createZeebeClient")
+	defer span.End()
 
 	zeebeClient := ZeebeClientCreatePayload{
 		ClientName: clientName,
@@ -553,7 +691,16 @@ func (c* CCClient) CreateZeebeClient(clusterID string, clientName string) (Zeebe
 	return c.ZeebeClientCreate, nil
 }
 
-func (c* CCClient) DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
+func (c *CCClient) DeleteZeebeClient(clusterID string, clientID string) (bool, error) {
+	ctx := context.Background()
+	return c.DeleteZeebeClientWithContext(ctx, clusterID, clientID)
+}
+
+func (c *CCClient) DeleteZeebeClientWithContext(ctx context.Context, clusterID string, clientID string) (bool, error) {
+
+
+	ctx, span := c.tracer.Start(ctx, "deleteZeebeClient")
+	defer span.End()
 
 	if len(clusterID) == 0 {
 		return false, NewError("Cluster id should not be empty")

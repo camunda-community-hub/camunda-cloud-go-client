@@ -84,6 +84,9 @@ func Execute() {
 		os.Exit(1)
 	}
 
+	flush := client.InitTracer()
+	defer flush()
+
 	login, err := client.Login(ClientId, ClientSecret)
 
 	if err != nil || !login {
