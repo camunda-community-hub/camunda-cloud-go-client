@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	cc "github.com/camunda-community-hub/camunda-cloud-go-client/pkg/cc/client"
 
@@ -32,6 +33,9 @@ var client cc.CCClient
 
 var ClientId = os.Getenv("CC_CLIENT_ID")
 var ClientSecret = os.Getenv("CC_CLIENT_SECRET")
+var TracerURL = os.Getenv("CC_TRACER_URL")
+var TracingEnabled, _ = strconv.ParseBool(os.Getenv("CC_TRACING_ENABLED"))
+var CCApiURL=os.Getenv("CC_API_URL")
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -84,11 +88,28 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	flush := client.InitTracer()
-	defer flush()
+	if TracingEnabled != true {
+		TracingEnabled = false
+	}
+	client.TracingEnabled(TracingEnabled)
+
+	if CCApiURL == "" {
+		CCApiURL = "cloud.camunda.io"
+	}
+	client.SetCCApiURL(CCApiURL)
+
+	if TracerURL == ""{
+		TracerURL = "localhost:14268"
+	}
+	client.SetTracerURL(TracerURL)
+
+	if TracingEnabled {
+		flush := client.InitTracer()
+		defer flush()
+	}
 
 	login, err := client.Login(ClientId, ClientSecret)
-
+	client.GetClusterParams()
 	if err != nil || !login {
 
 		fmt.Errorf("Error trying to Login to Camunda Cloud, "+

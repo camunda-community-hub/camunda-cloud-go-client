@@ -31,13 +31,31 @@ type CCClient struct {
 	ZeebeClientCreate ZeebeClientCreatedResponse
 
 	tracer trace.Tracer
+
+	tracingEnabled bool
+
+	tracerURL string
+
+	ccApiURL string
+}
+
+func (c *CCClient) TracingEnabled(tracingEnabled bool ){
+	c.tracingEnabled = tracingEnabled
+}
+
+func (c *CCClient) SetCCApiURL(ccApiURL string ){
+	c.ccApiURL = ccApiURL
+}
+
+func (c *CCClient) SetTracerURL(tracerURL string ){
+	c.tracerURL = tracerURL
 }
 
 func (c *CCClient) InitTracer() func() {
 
 	// Create and install Jaeger export pipeline.
 	flush, err := jaeger.InstallNewPipeline(
-		jaeger.WithCollectorEndpoint("http://localhost:14268/api/traces"),
+		jaeger.WithCollectorEndpoint("http://" + c.tracerURL + "/api/traces"),
 		jaeger.WithSDKOptions(
 			sdktrace.WithSampler(sdktrace.AlwaysSample()),
 			sdktrace.WithResource(resource.NewWithAttributes(
@@ -54,11 +72,11 @@ func (c *CCClient) InitTracer() func() {
 	return flush
 }
 
-func (c *CCClient) getDefaultClusterChannel() Channel {
+func (c *CCClient) getDefaultStableClusterChannel() Channel {
 	var selectedChannel = Channel{}
 
 	for _, channel := range c.ClusterParams.Channels {
-		if channel.IsDefault {
+		if channel.Name == "Stable" {
 			selectedChannel = channel
 		}
 	}
@@ -99,14 +117,8 @@ func (c *CCClient) getDevelopmentClusterPlan() ClusterPlantType {
 }
 
 func (c *CCClient) getDefaultRegion() Region {
-	var defaultRegion = Region{}
-	for _, r := range c.ClusterParams.Regions {
-		if r.Name == "Europe West 1D" {
-			defaultRegion = r
-		}
-
-	}
-	return defaultRegion
+	//chose the first one as default
+	return c.ClusterParams.Regions[0]
 }
 
 func (c *CCClient) GetClusterParams() (*ClusterParams, error) {
@@ -115,10 +127,12 @@ func (c *CCClient) GetClusterParams() (*ClusterParams, error) {
 }
 
 func (c *CCClient) GetClusterParamsWithContext(ctx context.Context) (*ClusterParams, error) {
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getClusterParams")
+		defer span.End()
+	}
 
-	ctx, span := c.tracer.Start(ctx, "getClusterParams")
-	defer span.End()
-	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/parameters", nil)
+	req, _ := http.NewRequest("GET", "https://api."+c.ccApiURL+"/clusters/parameters", nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
@@ -130,7 +144,7 @@ func (c *CCClient) GetClusterParamsWithContext(ctx context.Context) (*ClusterPar
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
+	fmt.Println("response Body Get cluster params :", string(body))
 	err2 := json.Unmarshal(body, &c.ClusterParams)
 
 	if err2 != nil {
@@ -146,9 +160,11 @@ func (c *CCClient) GetClusterDetails(clusterId string) (ClusterStatus, error) {
 }
 
 func (c *CCClient) GetClusterDetailsWithContext(ctx context.Context, clusterId string) (ClusterStatus, error) {
-	ctx, span := c.tracer.Start(ctx, "getClusterDetails")
-	defer span.End()
-	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getClusterDetails")
+		defer span.End()
+	}
+	req, _ := http.NewRequest("GET", "https://api."+c.ccApiURL+"/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	var clusterStatus = ClusterStatus{}
@@ -183,9 +199,10 @@ func (c *CCClient) CreateClusterCustomConfig(clusterParams ClusterCreationParams
 
 func (c *CCClient) CreateClusterCustomConfigWithContext(ctx context.Context, clusterParams ClusterCreationParams) (string, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "createClusterCustomConfig")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "createClusterCustomConfig")
+		defer span.End()
+	}
 
 	_, existsErr := c.clusterExistsValidator(clusterParams.ClusterName)
 
@@ -195,9 +212,11 @@ func (c *CCClient) CreateClusterCustomConfigWithContext(ctx context.Context, clu
 
 	jsonStr, _ := json.Marshal(clusterParams)
 
-	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters", bytes.NewBuffer(jsonStr))
+	req, _ := http.NewRequest("POST", "https://api."+c.ccApiURL+"/clusters", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
+
+	fmt.Println("Request create cluster :", req)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -228,9 +247,10 @@ func (c *CCClient) CreateClusterWithParams(clusterName string, clusterPlanName s
 }
 
 func (c *CCClient) CreateClusterWithParamsAndContext(ctx context.Context, clusterName string, clusterPlanName string, channelName string, generationName string, clusterRegion string) (string, error) {
-
-	ctx, span := c.tracer.Start(ctx, "createClusterWithParams")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "createClusterWithParams")
+		defer span.End()
+	}
 	_, existsErr := c.clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
@@ -251,7 +271,7 @@ func (c *CCClient) CreateClusterWithParamsAndContext(ctx context.Context, cluste
 	if channelName != "" {
 		channel = c.getClusterChannelByName(channelName)
 	} else {
-		channel = c.getDefaultClusterChannel()
+		channel = c.getDefaultStableClusterChannel()
 	}
 
 	if generationName != "" {
@@ -272,18 +292,18 @@ func (c *CCClient) CreateClusterWithParamsAndContext(ctx context.Context, cluste
 		region.Id,
 		clusterPlan.Id))
 
-	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", "https://api."+c.ccApiURL+"/clusters/", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
-	//fmt.Println("Request create cluster :", req)
+	fmt.Println("Request create cluster :", req)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	defer resp.Body.Close()
-	//fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
-	//fmt.Println("response Headers:", resp.Header)
+	fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
@@ -333,17 +353,17 @@ func (c *CCClient) CreateClusterDefault(clusterName string) (string, error) {
 }
 
 func (c *CCClient) CreateClusterDefaultWithContext(ctx context.Context, clusterName string) (string, error) {
-
-	ctx, span := c.tracer.Start(ctx, "createClusterDefault")
-	defer span.End()
-
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "createClusterDefault")
+		defer span.End()
+	}
 	_, existsErr := c.clusterExistsValidator(clusterName)
 
 	if existsErr != nil {
 		return "", existsErr
 	}
 
-	var channel = c.getDefaultClusterChannel()
+	var channel = c.getDefaultStableClusterChannel()
 	var clusterPlan = c.getDevelopmentClusterPlan()
 	var region = c.getDefaultRegion()
 	var jsonStr, _ = json.Marshal(NewClusterCreationParams(clusterName,
@@ -352,18 +372,18 @@ func (c *CCClient) CreateClusterDefaultWithContext(ctx context.Context, clusterN
 		region.Id,
 		clusterPlan.Id))
 
-	req, err := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/", bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", "https://api."+c.ccApiURL+"/clusters/", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
-	//fmt.Println("Request create cluster :", req)
+	fmt.Println("Request create cluster :", req)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
 	defer resp.Body.Close()
-	//fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
-	//fmt.Println("response Headers:", resp.Header)
+	fmt.Println("\n\n\nCreate Cluster Response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
@@ -388,13 +408,13 @@ func (c *CCClient) Login(clientId string, clientSecret string) (bool, error) {
 }
 
 func (c *CCClient) LoginWithContext(ctx context.Context, clientId string, clientSecret string) (bool, error) {
-
-	ctx, span := c.tracer.Start(ctx, "login")
-	defer span.End()
-
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "login")
+		defer span.End()
+	}
 	jsonStr, _ := json.Marshal(NewAuthRequestPayload(clientId, clientSecret))
 
-	req, err := http.NewRequest("POST", "https://login.cloud.camunda.io/oauth/token", bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", "https://login."+c.ccApiURL+"/oauth/token", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 
 	//fmt.Println("Request :", req)
@@ -431,11 +451,11 @@ func (c *CCClient) DeleteCluster(clusterId string) (bool, error) {
 
 func (c *CCClient) DeleteClusterWithContext(ctx context.Context, clusterId string) (bool, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "deleteCluster")
-	defer span.End()
-
-	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterId, nil)
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "deleteCluster")
+		defer span.End()
+	}
+	req, _ := http.NewRequest("DELETE", "https://api."+c.ccApiURL+"/clusters/"+clusterId, nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}
@@ -467,13 +487,13 @@ func (c *CCClient) GetClusters() ([]Cluster, error) {
 // GetClusters from Camunda Cloud
 func (c *CCClient) GetClustersWithContext(ctx context.Context) ( []Cluster, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "getClusters")
-	defer span.End()
-
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getClusters")
+		defer span.End()
+	}
 	data := []Cluster{}
 
-	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters", nil)
+	req, _ := http.NewRequest("GET", "https://api."+c.ccApiURL+"/clusters", nil)
 
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -505,10 +525,10 @@ func (c *CCClient) GetClusterByName(name string) (Cluster, error) {
 
 func (c *CCClient) GetClusterByNameWithContext(ctx context.Context, name string) (Cluster, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "getClusterByName")
-	defer span.End()
-
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getClusterByName")
+		defer span.End()
+	}
 	data := Cluster{}
 
 	clusters, err := c.GetClusters()
@@ -534,9 +554,10 @@ func (c *CCClient) clusterExistsValidator(clusterName string) (string, error) {
 
 func (c *CCClient) clusterExistsValidatorWithContext(ctx context.Context, clusterName string) (string, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "clusterExistsValidator")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "clusterExistsValidator")
+		defer span.End()
+	}
 
 	cluster, err := c.GetClusterByName(clusterName)
 
@@ -558,9 +579,10 @@ func (c *CCClient) GetZeebeClients(clusterID string) ([]ZeebeClientResponse, err
 // GetZeebeClients - List all Zeebe clients
 func (c *CCClient) GetZeebeClientsWithContext(ctx context.Context, clusterID string) ([]ZeebeClientResponse, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "getZeebeClients")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getZeebeClients")
+		defer span.End()
+	}
 
 	data := []ZeebeClientResponse{}
 
@@ -568,7 +590,7 @@ func (c *CCClient) GetZeebeClientsWithContext(ctx context.Context, clusterID str
 		return data, NewError("Cluster id should not be empty")
 	}
 
-	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", nil)
+	req, _ := http.NewRequest("GET", "https://api."+c.ccApiURL+"/clusters/"+clusterID+"/clients", nil)
 
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -600,9 +622,10 @@ func (c *CCClient) GetZeebeClientDetails(clusterID string, clientID string) (Zee
 
 func (c *CCClient) GetZeebeClientDetailsWithContext(ctx context.Context, clusterID string, clientID string) (ZeebeClientDetailsResponse, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "getZeebeClientDetails")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "getZeebeClientDetails")
+		defer span.End()
+	}
 
 	data := ZeebeClientDetailsResponse{}
 
@@ -614,7 +637,7 @@ func (c *CCClient) GetZeebeClientDetailsWithContext(ctx context.Context, cluster
 		return data, NewError("Client id should not be empty")
 	}
 
-	req, _ := http.NewRequest("GET", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
+	req, _ := http.NewRequest("GET", "https://api."+c.ccApiURL+"/clusters/"+clusterID+"/clients/"+clientID, nil)
 
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -646,9 +669,10 @@ func (c *CCClient) CreateZeebeClient(clusterID string, clientName string) (Zeebe
 
 func (c *CCClient) CreateZeebeClientWithContext(ctx context.Context, clusterID string, clientName string) (ZeebeClientCreatedResponse, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "createZeebeClient")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "createZeebeClient")
+		defer span.End()
+	}
 
 	zeebeClient := ZeebeClientCreatePayload{
 		ClientName: clientName,
@@ -664,7 +688,7 @@ func (c *CCClient) CreateZeebeClientWithContext(ctx context.Context, clusterID s
 
 	jsonStr, _ := json.Marshal(zeebeClient)
 
-	req, _ := http.NewRequest("POST", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients", bytes.NewBuffer(jsonStr))
+	req, _ := http.NewRequest("POST", "https://api."+c.ccApiURL+"/clusters/"+clusterID+"/clients", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
@@ -698,19 +722,16 @@ func (c *CCClient) DeleteZeebeClient(clusterID string, clientID string) (bool, e
 
 func (c *CCClient) DeleteZeebeClientWithContext(ctx context.Context, clusterID string, clientID string) (bool, error) {
 
-
-	ctx, span := c.tracer.Start(ctx, "deleteZeebeClient")
-	defer span.End()
+	if c.tracingEnabled {
+		_, span := c.tracer.Start(ctx, "deleteZeebeClient")
+		defer span.End()
+	}
 
 	if len(clusterID) == 0 {
 		return false, NewError("Cluster id should not be empty")
 	}
 
-	if len(clientID) == 0 {
-		return false, NewError("Cluster id should not be empty")
-	}
-
-	req, _ := http.NewRequest("DELETE", "https://api.cloud.camunda.io/clusters/"+clusterID+"/clients/"+clientID, nil)
+	req, _ := http.NewRequest("DELETE", "https://api."+c.ccApiURL+"/clusters/"+clusterID+"/clients/"+clientID, nil)
 	req.Header.Set("Authorization", "Bearer "+c.AuthResponsePayload.AccessToken)
 
 	client := &http.Client{}

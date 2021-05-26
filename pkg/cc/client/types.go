@@ -55,6 +55,9 @@ func NewAuthRequestPayload(clientId string, clientSecret string) AuthRequestPayl
 
 type AuthResponsePayload struct {
 	AccessToken string `json:"access_token"`
+	Scope       string `json:"scope"`
+	ExpiresIn   int    `json:"expires_in"`
+	TokenType   string `json:"token_type"`
 }
 
 type ClusterParams struct {
@@ -67,7 +70,6 @@ type Channel struct {
 	Id                string       `json:"uuid"`
 	Name              string       `json:"name"`
 	AllowedGeneration []Generation `json:"allowedGenerations"`
-	IsDefault         bool         `json:"isDefault"`
 	DefaultGeneration Generation   `json:"defaultGeneration"`
 }
 
@@ -79,13 +81,12 @@ type Generation struct {
 type ClusterPlantType struct {
 	Id   string `json:"uuid"`
 	Name string `json:"name"`
+	K8sContext K8sContext `json:"k8sContext"`
 }
 
 type Region struct {
 	Id     string `json:"uuid"`
 	Name   string `json:"name"`
-	Region string `json:"region"`
-	Zone   string `json:"zone"`
 }
 
 type ClusterCreatedResponse struct {
@@ -98,13 +99,13 @@ type Cluster struct {
 	Channel         Channel         `json:"channel"`
 	Generation      Generation      `json:"generation"`
 	Created         string          `json:"created"`
-	K8sContext      K8sContext      `json:"k8sContext"`
+	//K8sContext      K8sContext      `json:"k8sContext"`
 	ClusterMetadata ClusterMetadata `json:"metadata"`
 	ClusterPlantType ClusterPlantType `json:"planType"`
 }
 
 type K8sContext struct {
-	ID     string `json:"uuid"`
+	UUID   string `json:"uuid"`
 	Name   string `json:"name"`
 	Region string `json:"region"`
 	Zone   string `json:"zone"`
